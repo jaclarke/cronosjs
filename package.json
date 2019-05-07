@@ -1,0 +1,23 @@
+{
+  "name": "cronos",
+  "version": "0.0.1",
+  "description": "Schedule tasks with cron",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "/lib",
+    "!*.js.map"
+  ],
+  "scripts": {
+    "build": "rimraf ./lib && tsc",
+    "test": "jest"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^24.7.1",
+    "rimraf": "^2.6.3",
+    "typescript": "^3.4.3"
+  },
+  "dependencies": {}
+}
