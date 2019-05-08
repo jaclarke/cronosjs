@@ -1,6 +1,6 @@
 import { CronosExpression } from './expression'
 import { CronosTask } from './scheduler'
-import { CronosDate, CronosTimezone } from './date'
+import { CronosTimezone } from './date'
 
 export function scheduleTask(
   cronString: string,
@@ -28,4 +28,4 @@ export function validate(cronString: string) {
   return true
 }
 
-export { CronosExpression, CronosTask, CronosDate, CronosTimezone }
+export { CronosExpression, CronosTask, CronosTimezone }
