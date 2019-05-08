@@ -1,6 +1,8 @@
 language: node_js
 node_js:
   - "lts/*"
+env:
+  - TZ=Europe/London
 script:
   - tsc
   - jest --coverage
