@@ -1,7 +1,8 @@
 {
-  "name": "cronos",
-  "version": "0.0.1",
-  "description": "Schedule tasks with cron",
+  "name": "cronosjs",
+  "version": "1.0.0",
+  "description": "A cron based task scheduler for node and the browser, with extended syntax and timezone support.",
+  "keywords": ["cron", "schedule", "scheduler", "timezone support"],
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "files": [
@@ -12,8 +13,10 @@
     "build": "rimraf ./lib && tsc",
     "test": "jest"
   },
-  "author": "",
+  "author": "James Clarke <jaclarke77@gmail.com>",
   "license": "ISC",
+  "repository": "github:jaclarke/cronosjs",
+  "bugs": "https://github.com/jaclarke/cronosjs/issues",
   "devDependencies": {
     "jest": "^24.7.1",
     "rimraf": "^2.6.3",
