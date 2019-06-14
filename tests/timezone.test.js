@@ -1,4 +1,4 @@
-const { CronosExpression } = require('../lib/expression')
+const { CronosExpression, CronosTimezone } = require('../lib')
 
 test('5:17 every Tue (EST/EDT)', () => {
   expect(
@@ -11,6 +11,56 @@ test('5:17 every Tue (EST/EDT)', () => {
     new Date('2019-03-26T09:17:00.000Z'), // 5:17:00 26/03/2019 EDT
     new Date('2019-04-02T09:17:00.000Z')  // 5:17:00 02/04/2019 EDT
   ])
+})
+
+test('5:17 every Tue (EST/EDT) (from DTF string format)', () => {
+  const RealFormatToParts = Intl.DateTimeFormat.prototype.formatToParts
+  Intl.DateTimeFormat.prototype.formatToParts = undefined
+
+  expect(
+    CronosExpression.parse('17 5 * * Tue', {timezone: 'America/New_York'})
+      .nextNDates(new Date('2019-03-02T16:23:45.000Z'), 5) // 11:23:45 02/03/2019 EST
+  ).toEqual([
+    new Date('2019-03-05T10:17:00.000Z'), // 5:17:00 05/03/2019 EST
+    new Date('2019-03-12T09:17:00.000Z'), // 5:17:00 12/03/2019 EDT
+    new Date('2019-03-19T09:17:00.000Z'), // 5:17:00 19/03/2019 EDT
+    new Date('2019-03-26T09:17:00.000Z'), // 5:17:00 26/03/2019 EDT
+    new Date('2019-04-02T09:17:00.000Z')  // 5:17:00 02/04/2019 EDT
+  ])
+
+  Intl.DateTimeFormat.prototype.formatToParts = RealFormatToParts
+})
+
+describe('CronosTimezone parsing', () => {
+  test('Fixed offset number', () => {
+    expect(
+      new CronosTimezone(-120).fixedOffset
+    ).toEqual(-120)
+  })
+
+  test('Invalid fixed offset number', () => {
+    expect(
+      () => new CronosTimezone(850)
+    ).toThrow()
+  })
+
+  test('Fixed offset string (\'09:30\')', () => {
+    expect(
+      new CronosTimezone('09:30').fixedOffset
+    ).toEqual(570)
+  })
+
+  test('Fixed offset string (\'-0300\')', () => {
+    expect(
+      new CronosTimezone('-0300').fixedOffset
+    ).toEqual(-180)
+  })
+
+  test('Invalid IANA string', () => {
+    expect(
+      () => new CronosTimezone('Invalid/Timezone')
+    ).toThrow()
+  })
 })
 
 describe('Daylight savings options', () => {

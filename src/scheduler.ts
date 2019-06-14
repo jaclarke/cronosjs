@@ -16,6 +16,11 @@ function addTask(task: CronosTask) {
 function removeTask(task: CronosTask) {
   const removeIndex = scheduledTasks.indexOf(task)
   if (removeIndex >= 0) scheduledTasks.splice(removeIndex, 1)
+
+  if (scheduledTasks.length === 0 && runningTimer) {
+    clearTimeout(runningTimer)
+    runningTimer = null
+  }
 }
 
 function runScheduledTasks() {
@@ -36,7 +41,7 @@ function runScheduledTasks() {
   if (nextTask) {
     runningTimer = setTimeout(runScheduledTasks,
       Math.min((nextTask['_timestamp'] || 0) - Date.now(), maxTimeout))
-  }
+  } else runningTimer = null
 }
 
 type CronosTaskListeners = {
