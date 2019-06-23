@@ -1,5 +1,4 @@
-const { scheduleTask, CronosExpression, CronosTask, validate } = require('../lib')
-const { CronosDate } = require('../lib/date')
+const { scheduleTask, CronosExpression, CronosTask, validate } = require('../pkg/dist-node')
 
 const RealDate = Date
 
@@ -56,18 +55,6 @@ describe('Validate cron string', () => {
   test('Invalid string', () => {
     expect(validate('0 10W 16 4,L Jun * 2035')).toEqual(false)
   })
-})
-
-test('CronosDate.copyWith()', () => {
-  const date = new CronosDate(2019, 4, 21, 11, 23, 45)
-
-  expect(date.copyWith()).toEqual(date)
-
-  expect(
-    date.copyWith({
-      year: 2020, month: 5, day: 22, hour: 12, minute: 24, second: 46
-    })
-  ).toEqual(new CronosDate(2020, 5, 22, 12, 24, 46))
 })
 
 describe('Scheduling tests', () => {

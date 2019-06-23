@@ -1,4 +1,4 @@
-const { CronosExpression } = require('../lib/expression')
+const { CronosExpression } = require('../pkg/dist-node')
 
 test('Every minute (* * * * *)', () => {
   expect(

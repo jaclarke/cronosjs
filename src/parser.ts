@@ -80,7 +80,7 @@ function expandFieldItem(item: string, first: number, last: number): number[] {
 }
 
 function secondsOrMinutesParser(field: string): number[] {
-  const allowed = new Set()
+  const allowed: Set<number> = new Set()
 
   for (const item of field.split(',')) {
     for (const n of expandFieldItem(item, 0, 59)) {
@@ -92,7 +92,7 @@ function secondsOrMinutesParser(field: string): number[] {
 }
 
 function hoursParser(field: string): number[] {
-  const allowed = new Set()
+  const allowed: Set<number> = new Set()
 
   for (const item of field.split(',')) {
     for (const n of expandFieldItem(item, 0, 23)) {
@@ -214,7 +214,7 @@ function daysParser(daysOfMonthField: string, daysOfWeekField: string): CronosDa
 }
 
 function monthsParser(field: string): number[] {
-  const allowed = new Set()
+  const allowed: Set<number> = new Set()
 
   const normalisedField = field.replace(monthReplacementRegex, match => {
     return monthReplacements.indexOf(match) + 1 + ''
@@ -230,7 +230,7 @@ function monthsParser(field: string): number[] {
 }
 
 function yearsParser(field: string): number[] {
-  const allowed = new Set()
+  const allowed: Set<number> = new Set()
 
   for (const item of field.split(',')) {
     for (const n of expandFieldItem(item, 1970, 2099)) {

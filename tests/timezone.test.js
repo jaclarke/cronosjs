@@ -1,4 +1,4 @@
-const { CronosExpression, CronosTimezone } = require('../lib')
+const { CronosExpression, CronosTimezone } = require('../pkg/dist-node')
 
 test('5:17 every Tue (EST/EDT)', () => {
   expect(

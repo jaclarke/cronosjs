@@ -4,6 +4,6 @@ node_js:
 env:
   - TZ=Europe/London
 script:
-  - tsc
+  - npm run build
   - jest --coverage
   - cat ./coverage/lcov.info | coveralls
