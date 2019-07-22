@@ -262,7 +262,8 @@ export class CronosExpression {
   }
 
   private _nextSecond(fromDate: CronosDate): CronosDate | null {
-    let nextSecond = this.seconds.find(n => n >= fromDate.second)
+    const nextSecondIndex = findFirstFrom(fromDate.second, this.seconds),
+          nextSecond = this.seconds[nextSecondIndex]
 
     if (nextSecond === undefined) return null
 
