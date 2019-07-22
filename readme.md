@@ -251,6 +251,10 @@ import {
 ### CronosExpression
 ```class CronosExpression```
 
+#### Properties
+ - `cronString: string` (readonly)  
+  Original cron string passed to `CronosExpression.parse`
+
 #### Static Methods
  - `CronosExpression.parse(cronString, options)`  
   Parameters `cronString` and `options` same as for [`scheduleTask`](#scheduletask), returns `CronosExpression` instance
