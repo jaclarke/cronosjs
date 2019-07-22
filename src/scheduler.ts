@@ -100,7 +100,12 @@ export class CronosTask {
     const nextDate = this._expression.nextDate(
       this._timestamp ? new Date(this._timestamp) : new Date()
     )
-    this._timestamp = nextDate ? nextDate.getTime() : undefined
+
+    let timestamp = nextDate ? nextDate.getTime() : undefined
+    if (this._timestamp && timestamp && timestamp < (this._timestamp + 1000)) timestamp = this._timestamp + 1000
+
+    this._timestamp = timestamp
+
     if (!this._timestamp) this._emit('ended')
   }
 
