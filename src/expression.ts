@@ -11,6 +11,7 @@ export class CronosExpression {
   private missingHour: 'insert' | 'offset' | 'skip' = 'insert'
 
   constructor(
+    public readonly cronString: string,
     private readonly seconds: number[],
     private readonly minutes: number[],
     private readonly hours: number[],
@@ -32,6 +33,16 @@ export class CronosExpression {
     expr.missingHour = options.missingHour || expr.missingHour
 
     return expr
+  }
+
+  toString() {
+    const showTzOpts = !this.timezone || this.timezone.zoneName
+    const timezone = Object.entries({
+      tz: this.timezone && this.timezone.toString() || 'Local',
+      skipRepeatedHour: showTzOpts && this.skipRepeatedHour.toString(),
+      missingHour: showTzOpts && this.missingHour,
+    }).map(([key, val]) => val && key+': '+val).filter(s => s).join(', ')
+    return `${this.cronString} (${timezone})`
   }
 
   nextDate(afterDate: Date = new Date()): Date | null {

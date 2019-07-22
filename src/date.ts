@@ -110,6 +110,18 @@ export class CronosTimezone {
     ZoneCache.set(IANANameOrOffset, this)
   }
 
+  toString() {
+    if (this.fixedOffset) {
+      const absOffset = Math.abs(this.fixedOffset)
+      return [
+        this.fixedOffset < 0 ? '-' : '+',
+        Math.floor(absOffset / 60).toString().padStart(2, '0'),
+        (absOffset % 60).toString().padStart(2, '0')
+      ].join('')
+    }
+    return this.zoneName
+  }
+
   private offset(ts: number) {
     if (!this.dateTimeFormat) return this.fixedOffset || 0
 

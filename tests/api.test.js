@@ -129,3 +129,25 @@ describe('Scheduling tests', () => {
   })
 
 })
+
+describe('CronosExpression.cronString and .toString()', () => {
+  test('Local timezone', () => {
+    const expr = CronosExpression.parse('0 10 16 4,L Jun * 2035')
+
+    expect(expr.cronString).toEqual('0 10 16 4,L Jun * 2035')
+    expect(expr.toString()).toEqual('0 10 16 4,L Jun * 2035 (tz: Local, skipRepeatedHour: true, missingHour: insert)')
+  })
+
+  test('IANA timezone', () => {
+    expect(CronosExpression.parse('0 10 16 4,L Jun * 2035', {
+      timezone: 'America/New_York',
+      missingHour: 'offset'
+    }).toString()).toEqual('0 10 16 4,L Jun * 2035 (tz: America/New_York, skipRepeatedHour: true, missingHour: offset)')
+  })
+
+  test('Fixed offset', () => {
+    expect(CronosExpression.parse('0 10 16 4,L Jun * 2035', {
+      timezone: -270,
+    }).toString()).toEqual('0 10 16 4,L Jun * 2035 (tz: -0430)')
+  })
+})

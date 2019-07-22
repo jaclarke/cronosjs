@@ -40,6 +40,7 @@ export function _parse(cronstring: string) {
   }
 
   return new CronosExpression(
+    cronstring,
     secondsOrMinutesParser(fields[0]),
     secondsOrMinutesParser(fields[1]),
     hoursParser(fields[2]),
