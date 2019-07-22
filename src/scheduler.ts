@@ -8,7 +8,7 @@ let runningTimer: number | null = null
 function addTask(task: CronosTask) {
   if (task['_timestamp']) {
     const insertIndex = scheduledTasks.findIndex(t => (t['_timestamp'] || 0) < (task['_timestamp'] || 0))
-    if (insertIndex >= 0) scheduledTasks.splice(insertIndex + 1, 0, task)
+    if (insertIndex >= 0) scheduledTasks.splice(insertIndex, 0, task)
     else scheduledTasks.push(task)
   }
 }
