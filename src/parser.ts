@@ -50,7 +50,7 @@ export function _parse(cronstring: string) {
   )
 }
 
-function expandFieldItem(item: string, first: number, last: number): number[] {
+function expandFieldItem(item: string, first: number, last: number, allowCyclicRange = false, transformer?: (n: number) => number): number[] {
   let start: number = first,
       end: number = last,
       every: number = 1
@@ -60,11 +60,18 @@ function expandFieldItem(item: string, first: number, last: number): number[] {
 
   if (startFrom) {
     start = parseInt(startFrom, 10)
+    start = transformer ? transformer(start) : start
     if (start < first || start > last) throw new Error('Field item start from value invalid')
     end = step ? last : start
   } else if (range) {
-    const [rangeStart, rangeEnd] = range.split('-').map(x => parseInt(x, 10))
-    if (rangeStart < first || rangeEnd > last || rangeStart > rangeEnd) {
+    const [rangeStart, rangeEnd] = range.split('-').map(x => {
+      const n = parseInt(x, 10)
+      return transformer ? transformer(n) : n
+    })
+    if (
+      rangeStart < first || rangeStart > last || rangeEnd < first || rangeEnd > last ||
+      (rangeEnd < rangeStart && !allowCyclicRange)
+    ) {
       throw new Error('Field item range invalid')
     }
     start = rangeStart
@@ -75,16 +82,17 @@ function expandFieldItem(item: string, first: number, last: number): number[] {
     every = parseInt(step, 10)
   }
 
-  return Array(Math.floor((end - start) / every) + 1)
+  const rangeLength = (end < start) ? ((last - start) + (end - first) + 1) : (end - start)
+  return Array(Math.floor(rangeLength / every) + 1)
     .fill(0)
-    .map((_, i) => start + (every*i))
+    .map((_, i) => first + ((start - first + (every*i)) % (last - first + 1)))
 }
 
 function secondsOrMinutesParser(field: string): number[] {
   const allowed: Set<number> = new Set()
 
   for (const item of field.split(',')) {
-    for (const n of expandFieldItem(item, 0, 59)) {
+    for (const n of expandFieldItem(item, 0, 59, true)) {
       allowed.add(n)
     }
   }
@@ -96,7 +104,7 @@ function hoursParser(field: string): number[] {
   const allowed: Set<number> = new Set()
 
   for (const item of field.split(',')) {
-    for (const n of expandFieldItem(item, 0, 23)) {
+    for (const n of expandFieldItem(item, 0, 23, true)) {
       allowed.add(n)
     }
   }
@@ -184,7 +192,7 @@ function daysParser(daysOfMonthField: string, daysOfWeekField: string): CronosDa
       item = item.slice(0, item.indexOf('#'))
     }
 
-    let days = expandFieldItem(item, 0, 7).map(n => n === 7 ? 0 : n)
+    let days = expandFieldItem(item, 0, 6, true, n => n === 7 ? 0 : n)
 
     if (nth) {
       for (const n of days) {
@@ -222,7 +230,7 @@ function monthsParser(field: string): number[] {
   })
 
   for (const item of normalisedField.split(',')) {
-    for (const n of expandFieldItem(item, 1, 12)) {
+    for (const n of expandFieldItem(item, 1, 12, true)) {
       allowed.add(n)
     }
   }

@@ -12,9 +12,15 @@ test('Too many fields', () => {
   ).toThrow()
 })
 
-test('Range start greater than range end', () => {
+test('Range start greater than range end (seconds)', () => {
   expect(
     () => CronosExpression.parse('32-8 * * * *')
+  ).not.toThrow()
+})
+
+test('Range start greater than range end (day of month)', () => {
+  expect(
+    () => CronosExpression.parse('* * 23-4 * *')
   ).toThrow()
 })
 

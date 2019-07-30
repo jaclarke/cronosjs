@@ -142,3 +142,65 @@ test('Every 3rd hour (0 */3 * * *)', () => {
     new Date(2019, 3, 22, 0, 0, 0)
   ])
 })
+
+test('Every minute from 57 to 4 (57-4 * * * *)', () => {
+  expect(
+    CronosExpression.parse('57-4 * * * *')
+      .nextNDates(new Date(2019, 3, 21, 11, 23, 45), 10)
+  ).toEqual([
+    new Date(2019, 3, 21, 11, 57, 0),
+    new Date(2019, 3, 21, 11, 58, 0),
+    new Date(2019, 3, 21, 11, 59, 0),
+    new Date(2019, 3, 21, 12,  0, 0),
+    new Date(2019, 3, 21, 12,  1, 0),
+    new Date(2019, 3, 21, 12,  2, 0),
+    new Date(2019, 3, 21, 12,  3, 0),
+    new Date(2019, 3, 21, 12,  4, 0),
+    new Date(2019, 3, 21, 12, 57, 0),
+    new Date(2019, 3, 21, 12, 58, 0)
+  ])
+})
+
+test('Every other minute from 57 to 4 (57-4/2 * * * *)', () => {
+  expect(
+    CronosExpression.parse('57-4/2 * * * *')
+      .nextNDates(new Date(2019, 3, 21, 11, 23, 45), 10)
+  ).toEqual([
+    new Date(2019, 3, 21, 11, 57, 0),
+    new Date(2019, 3, 21, 11, 59, 0),
+    new Date(2019, 3, 21, 12,  1, 0),
+    new Date(2019, 3, 21, 12,  3, 0),
+    new Date(2019, 3, 21, 12, 57, 0),
+    new Date(2019, 3, 21, 12, 59, 0),
+    new Date(2019, 3, 21, 13,  1, 0),
+    new Date(2019, 3, 21, 13,  3, 0),
+    new Date(2019, 3, 21, 13, 57, 0),
+    new Date(2019, 3, 21, 13, 59, 0)
+  ])
+})
+
+test('Every day at 00:00 from fri to mon (0 0 * * fri-mon)', () => {
+  expect(
+    CronosExpression.parse('0 0 * * fri-mon')
+      .nextNDates(new Date(2019, 3, 21, 11, 23, 45), 5)
+  ).toEqual([
+    new Date(2019, 3, 22, 0, 0, 0),
+    new Date(2019, 3, 26, 0, 0, 0),
+    new Date(2019, 3, 27, 0, 0, 0),
+    new Date(2019, 3, 28, 0, 0, 0),
+    new Date(2019, 3, 29, 0, 0, 0)
+  ])
+})
+
+test('1st of the month at 00:00, every 3rd month from aug to apr (0 0 1 aug-apr/3 *)', () => {
+  expect(
+    CronosExpression.parse('0 0 1 aug-apr/3 *')
+      .nextNDates(new Date(2019, 3, 21, 11, 23, 45), 5)
+  ).toEqual([
+    new Date(2019,  7, 1, 0, 0, 0),
+    new Date(2019, 10, 1, 0, 0, 0),
+    new Date(2020,  1, 1, 0, 0, 0),
+    new Date(2020,  7, 1, 0, 0, 0),
+    new Date(2020, 10, 1, 0, 0, 0)
+  ])
+})
