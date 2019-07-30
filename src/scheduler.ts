@@ -33,8 +33,10 @@ function runScheduledTasks() {
 
   for (let task of tasksToRun) {
     task['_runTask']()
-    task['_updateTimestamp']()
-    addTask(task)
+    if (task.isRunning) {
+      task['_updateTimestamp']()
+      addTask(task)
+    }
   }
 
   const nextTask = scheduledTasks[scheduledTasks.length - 1]

@@ -128,6 +128,37 @@ describe('Scheduling tests', () => {
     task.off('run', runCallback)
   })
 
+  test('Stopping task in run callback', () => {
+    const runCallback = jest.fn()
+    const stoppedCallback = jest.fn()
+
+    const fromDate = '2019-04-21T11:23:45Z'
+    mockDate(fromDate)
+
+    const task = new CronosTask(
+      CronosExpression.parse('0 23 18/3 * Apr Tue 2019', {
+        timezone: 0
+      })
+    )
+
+    task
+      .on('run', () => {
+        runCallback()
+        task.stop()
+      })
+      .on('stopped', stoppedCallback)
+      .start()
+
+    mockDate(task.nextRun)
+    jest.runOnlyPendingTimers()
+
+    expect(runCallback).toHaveBeenCalledTimes(1)
+
+    expect(stoppedCallback).toBeCalled()
+
+    expect(task.isRunning).toEqual(false)
+  })
+
 })
 
 describe('CronosExpression.cronString and .toString()', () => {
