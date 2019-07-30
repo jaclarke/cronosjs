@@ -110,7 +110,12 @@ The separated expressions can contain any of the allowed values and symbols for 
 ### Range (`-`)
 Defines a range of values, inclusive. eg. `16-39` in the seconds field means the 16th second and every second after up to and including the 39th second.
 
-The second value is required to be greater than the first value to be a valid range.
+For fields with a cyclic nature (ie. *Second*, *Minute*, *Hour*, *Month* and *Day of Week*), wrap-around ranges are supported, eg. `Fri-Mon` will select `Fri, Sat, Sun and Mon`. Otherwise for non-cyclic fields (ie. *Day of Month* and *Year*) the second value is required to be greater than the first value.
+
+> **Note** Wrap-around ranges are purely 'syntactic sugar' to primarily make *day of week* and *month* ranges simpler to write, and do not alter the underlying behaviour of this cron library. The parser effectively translates wrap-around expressions such as `Fri-Mon` to the standard form, as though it were written as `Fri-Sat,Sun-Mon` (`5-1` and `5-6,0-1` respectively in numerical form), meaning any range expression is still able to be written in a form compatible with other cron implementations.  
+>  
+> It is for this reason *Day of Month* is considered non-cyclic, since the number of days in a month differs between months, leading to possibly unexpected behaviour when a wraparound range is used with an increment.  
+> eg. The *Day of Month* expression `27-5/2` would select the days `27, 29, 31, 2, 4`, regardless of the number of days in the month, so in a month with only 30 days the actual scheduled days would become `27, 29, 2, 4`, creating a 3 day increment between the 29th and the 2nd. Correctly handling increments across the wraparound would create behaviour incompatible with other cron implementations, such that simple translation to a non wrap-around form would not be possible.
 
 ### Increments (`/`)
 Defines increments of a range. Can be used in three ways:
