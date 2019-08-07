@@ -1,11 +1,12 @@
 import { CronosDaysExpression, _parse } from './parser'
 import { CronosDate, CronosTimezone } from './date'
+import { DateSequence } from './scheduler'
 import { sortAsc } from './utils'
 
 const hourinms = 60 * 60 * 1000
 const findFirstFrom = (from: number, list: number[]) => list.findIndex(n => n >= from)
 
-export class CronosExpression {
+export class CronosExpression implements DateSequence {
   private timezone?: CronosTimezone
   private skipRepeatedHour = true
   private missingHour: 'insert' | 'offset' | 'skip' = 'insert'

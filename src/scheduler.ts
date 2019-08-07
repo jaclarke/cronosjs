@@ -1,5 +1,3 @@
-import { CronosExpression } from './expression'
-
 const maxTimeout = Math.pow(2, 31) - 1
 const scheduledTasks: CronosTask[] = []
 
@@ -46,12 +44,35 @@ function runScheduledTasks() {
   } else runningTimer = null
 }
 
+export interface DateSequence {
+  nextDate: (afterDate: Date) => Date | null
+}
+
+class DateArraySequence implements DateSequence {
+  private _dates: Date[]
+
+  constructor(dateLikes: DateLike[]) {
+    this._dates = dateLikes.map(dateLike => {
+      const date = new Date(dateLike)
+      if (isNaN(date.getTime())) throw new Error('Invalid date')
+      return date
+    }).sort((a, b) => a.getTime() - b.getTime())
+  }
+
+  nextDate(afterDate: Date) {
+    const nextIndex = this._dates.findIndex(d => d > afterDate)
+    return nextIndex === -1 ? null : this._dates[nextIndex]
+  }
+}
+
 type CronosTaskListeners = {
   'started': () => void
   'stopped': () => void
   'run':     (timestamp: number) => void
   'ended':   () => void
 }
+
+type DateLike = Date | string | number
 
 export class CronosTask {
   private _listeners: {
@@ -63,12 +84,21 @@ export class CronosTask {
     'ended': new Set(),
   }
   private _timestamp?: number
-  private _expression: CronosExpression
+  private _sequence: DateSequence
 
+  constructor(sequence: DateSequence)
+  constructor(dates: DateLike[])
+  constructor(date: DateLike)
   constructor(
-    expression: CronosExpression,
+    sequenceOrDates: DateSequence | DateLike[] | DateLike,
   ) {
-    this._expression = expression
+    if (Array.isArray(sequenceOrDates)) this._sequence = new DateArraySequence(sequenceOrDates)
+    else if (
+      typeof sequenceOrDates === 'string' || 
+      typeof sequenceOrDates === 'number' ||
+      sequenceOrDates instanceof Date
+    ) this._sequence = new DateArraySequence([sequenceOrDates])
+    else this._sequence = sequenceOrDates
   }
 
   start() {
@@ -99,7 +129,7 @@ export class CronosTask {
   }
 
   private _updateTimestamp() {
-    const nextDate = this._expression.nextDate(
+    const nextDate = this._sequence.nextDate(
       this._timestamp ? new Date(this._timestamp) : new Date()
     )
 

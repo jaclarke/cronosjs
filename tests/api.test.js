@@ -159,6 +159,42 @@ describe('Scheduling tests', () => {
     expect(task.isRunning).toEqual(false)
   })
 
+  test('CronosTask with array of dates', () => {
+    const startedCallback = jest.fn()
+    const runCallback = jest.fn()
+
+    const fromDate = '2019-04-21T11:23:45Z'
+    mockDate(fromDate)
+
+    const task = new CronosTask(
+      [new Date(2020, 7, 23, 9, 45, 0), 1555847845000, '5 Oct 2019 17:32']
+    )
+
+    task
+      .on('started', startedCallback)
+      .on('run', runCallback)
+
+    expect(startedCallback).not.toBeCalled()
+
+    task.start()
+
+    expect(startedCallback).toBeCalled()
+
+    mockDate('2019-04-21T11:57:25Z')
+    jest.runOnlyPendingTimers()
+
+    expect(runCallback).toHaveBeenCalledTimes(1)
+    expect(runCallback).toHaveBeenLastCalledWith( getTimestamp('2019-04-21T11:57:25Z') )
+
+    task.off('run', runCallback)
+  })
+
+  test('CronosTask with invalid date', () => {
+    expect(
+      () => new CronosTask('invalid')
+    ).toThrow()
+  })
+
 })
 
 describe('CronosExpression.cronString and .toString()', () => {

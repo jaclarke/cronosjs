@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.4.0] - 07 Aug 2019
+### Added
+ - Support for providing a date, array of dates, or a custom date sequence to `new CronosTask()` instead of a `CronosExpression` object
+
 ## [1.3.0] - 30 Jul 2019
 ### Added
  - Support wrap-around ranges for cyclic type fields (ie. *Second*, *Minute*, *Hour*, *Month* and *Day of Week*)

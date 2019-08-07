@@ -67,6 +67,22 @@ task
     console.log(`No more dates matching expression`)
   })
   .start()
+
+// schedule tasks from a list of dates
+const taskFromDates = new CronosTask([
+  new Date(2020, 7, 23, 9, 45, 0),
+  1555847845000,
+  '5 Oct 2019 17:32',
+])
+
+taskFromDates
+  .on('run', (timestamp) => {
+    console.log(`Task triggered at ${timestamp}`)
+  })
+  .on('ended', () => {
+    console.log(`No more dates in list`)
+  })
+  .start()
 ```
 
 
@@ -283,10 +299,21 @@ import {
 ### CronosTask
 ```class CronosTask```
 
-#### Constructor
-```new CronosTask(expression)```
- - `expression: CronosExpression`  
-  An instance of [CronosExpression](#cronosexpression)
+#### Constructor (3 overloads)
+ - ```new CronosTask(sequence)```
+    - `sequence: DateSequence`  
+      Either an instance of [CronosExpression](#cronosexpression) or any other object that implements the `DateSequence` interface
+      ```typescript
+      interface DateSequence {
+        nextDate: (afterDate: Date) => Date | null
+      }
+      ```
+ - ```new CronosTask(date)```
+    - `date: Date | string | number`  
+      Either a `Date`, a timestamp, or a string repesenting a valid date, parsable by `new Date()`
+ - ```new CronosTask(dates)```
+    - `dates: (Date | string | number)[]`  
+      An array of dates accepted valid in above constructor
 
 #### Properties
  - `nextRun: Date | null` (readonly)  
