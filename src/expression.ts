@@ -1,7 +1,6 @@
-import { CronosDaysExpression, _parse } from './parser'
+import { _parse, DaysFieldValues, YearsField } from './parser'
 import { CronosDate, CronosTimezone } from './date'
 import { DateSequence } from './scheduler'
-import { sortAsc } from './utils'
 
 const hourinms = 60 * 60 * 1000
 const findFirstFrom = (from: number, list: number[]) => list.findIndex(n => n >= from)
@@ -16,9 +15,9 @@ export class CronosExpression implements DateSequence {
     private readonly seconds: number[],
     private readonly minutes: number[],
     private readonly hours: number[],
-    private readonly days: CronosDaysExpression,
+    private readonly days: DaysFieldValues,
     private readonly months: number[],
-    private readonly years: number[]
+    private readonly years: YearsField
   ) {}
 
   static parse(cronstring: string, options: {
@@ -122,19 +121,19 @@ export class CronosExpression implements DateSequence {
   }
 
   private _nextYear(fromDate: CronosDate): CronosDate | null {
-    let nextYearIndex = findFirstFrom(fromDate.year, this.years)
+    let year: number | null = fromDate.year
 
     let nextDate = null
 
     while (!nextDate) {
-      const nextYear = this.years[nextYearIndex]
-      if (nextYear === undefined) return null
+      year = this.years.nextYear(year)
+      if (year === null) return null
 
       nextDate = this._nextMonth(
-        (nextYear === fromDate.year) ? fromDate : new CronosDate(nextYear)
+        (year === fromDate.year) ? fromDate : new CronosDate(year)
       )
 
-      nextYearIndex++
+      year++
     }
 
     return nextDate
@@ -160,7 +159,7 @@ export class CronosExpression implements DateSequence {
   }
 
   private _nextDay(fromDate: CronosDate): CronosDate | null {
-    const days = this._resolveDays(fromDate.year, fromDate.month)
+    const days = this.days.getDays(fromDate.year, fromDate.month)
 
     let nextDayIndex = findFirstFrom(fromDate.day, days)
 
@@ -180,58 +179,7 @@ export class CronosExpression implements DateSequence {
     return nextDate
   }
 
-  private _resolveDays(year: number, month: number): number[] {
-    const days: Set<number> = new Set(this.days.include)
-
-    const lastDateOfMonth = new Date(year, month, 0).getDate()
-    const firstDayOfWeek = new Date(year, month-1, 1).getDay()
-
-    const getNearestWeekday = (day: number) => {
-      if (day > lastDateOfMonth) day = lastDateOfMonth
-      const dayOfWeek = (day + firstDayOfWeek - 1) % 7
-      let weekday = day + (dayOfWeek === 0 ? 1 : (dayOfWeek === 6 ? -1 : 0))
-      return weekday + (weekday < 1 ? 3 : (weekday > lastDateOfMonth ? -3 : 0))
-    }
-
-    if (this.days.last) {
-      days.add(lastDateOfMonth)
-    }
-    if (this.days.lastWeekday) {
-      days.add( getNearestWeekday(lastDateOfMonth) )
-    }
-    for (const day of this.days.nearestWeekdays) {
-      days.add( getNearestWeekday(day) )
-    }
-
-    if (this.days.daysOfWeek.length ||
-        this.days.lastDaysOfWeek.length ||
-        this.days.nthDaysOfWeek.length
-    ) {
-      const daysOfWeek: number[][] = Array(7).fill(0).map(() => ([]))
-      for (let day = 1; day < 36; day++) {
-        daysOfWeek[(day + firstDayOfWeek - 1) % 7].push(day)
-      }
-
-      for (const dayOfWeek of this.days.daysOfWeek) {
-        for (const day of daysOfWeek[dayOfWeek]) {
-          days.add(day)
-        }
-      }
-      for (const dayOfWeek of this.days.lastDaysOfWeek) {
-        for (let i = daysOfWeek[dayOfWeek].length-1; i >= 0; i--) {
-          if (daysOfWeek[dayOfWeek][i] <= lastDateOfMonth) {
-            days.add(daysOfWeek[dayOfWeek][i])
-            break
-          }
-        }
-      }
-      for (const [dayOfWeek, nthOfMonth] of this.days.nthDaysOfWeek) {
-        days.add(daysOfWeek[dayOfWeek][nthOfMonth-1])
-      }
-    }
-
-    return Array.from(days).filter(day => day <= lastDateOfMonth).sort(sortAsc)
-  }
+  
 
   private _nextHour(fromDate: CronosDate): CronosDate | null {
     let nextHourIndex = findFirstFrom(fromDate.hour, this.hours)

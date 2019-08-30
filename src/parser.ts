@@ -19,6 +19,18 @@ const monthReplacementRegex = new RegExp(monthReplacements.join('|'), 'g')
 const dayOfWeekReplacements = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
 const dayOfWeekReplacementRegex = new RegExp(dayOfWeekReplacements.join('|'), 'g')
 
+/*
+"The actual range of times supported by ECMAScript Date objects is slightly smaller:
+  exactly –100,000,000 days to 100,000,000 days measured relative to midnight at the
+  beginning of 01 January, 1970 UTC. This gives a range of 8,640,000,000,000,000
+  milliseconds to either side of 01 January, 1970 UTC."
+http://ecma-international.org/ecma-262/5.1/#sec-15.9.1.1
+
+new Date(8640000000000000) => 00:00:00 13th Sep 275760
+Largest full year valid as JS date = 275759
+*/
+const maxValidYear = 275759
+
 export function _parse(cronstring: string) {
   let expr = cronstring.trim().toLowerCase();
 
@@ -41,211 +53,327 @@ export function _parse(cronstring: string) {
 
   return new CronosExpression(
     cronstring,
-    secondsOrMinutesParser(fields[0]),
-    secondsOrMinutesParser(fields[1]),
-    hoursParser(fields[2]),
-    daysParser(fields[3], fields[5]),
-    monthsParser(fields[4]),
-    yearsParser(fields[6])
+    new SecondsOrMinutesField(fields[0]).values,
+    new SecondsOrMinutesField(fields[1]).values,
+    new HoursField(fields[2]).values,
+    new DaysField(fields[3], fields[5]).values,
+    new MonthsField(fields[4]).values,
+    new YearsField(fields[6])
   )
 }
 
-function expandFieldItem(item: string, first: number, last: number, allowCyclicRange = false, transformer?: (n: number) => number): number[] {
-  let start: number = first,
-      end: number = last,
-      every: number = 1
-  const [match, all, startFrom, range, step] = (item.match(/^(?:(\*)|([0-9]+)|([0-9]+-[0-9]+))(?:\/([1-9][0-9]*))?$/) || []) as string[]
 
-  if (!match) throw new Error('Field item invalid')
+abstract class Field {
+  abstract first: number
+  abstract last: number
 
-  if (startFrom) {
-    start = parseInt(startFrom, 10)
-    start = transformer ? transformer(start) : start
-    if (start < first || start > last) throw new Error('Field item start from value invalid')
-    end = step ? last : start
-  } else if (range) {
-    const [rangeStart, rangeEnd] = range.split('-').map(x => {
-      const n = parseInt(x, 10)
-      return transformer ? transformer(n) : n
-    })
-    if (
-      rangeStart < first || rangeStart > last || rangeEnd < first || rangeEnd > last ||
-      (rangeEnd < rangeStart && !allowCyclicRange)
-    ) {
-      throw new Error('Field item range invalid')
-    }
-    start = rangeStart
-    end = rangeEnd
+  constructor(protected field: string) {}
+
+  protected parse() {
+    return this.field.split(',')
+      .map(item => FieldItem.parse(item, this.first, this.last, true))
   }
 
-  if (step) {
-    every = parseInt(step, 10)
+  private _items?: FieldItem[]
+  protected get items() {
+    if (!this._items) this._items = this.parse()
+    return this._items
   }
 
-  const rangeLength = (end < start) ? ((last - start) + (end - first) + 1) : (end - start)
-  return Array(Math.floor(rangeLength / every) + 1)
-    .fill(0)
-    .map((_, i) => first + ((start - first + (every*i)) % (last - first + 1)))
+  get values() {
+    return Field.getValues(this.items, this.first, this.last)
+  }
+
+  static getValues(items: FieldItem[], first: number, last: number) {
+    return Array.from(new Set(
+      items.reduce<number[]>((values, item) => {
+        values.push(...item.values(first, last))
+        return values
+      }, [])
+    )).sort(sortAsc)
+  }
 }
 
-function secondsOrMinutesParser(field: string): number[] {
-  const allowed: Set<number> = new Set()
+class FieldItem {
+  range?: {
+    from: number
+    to?: number
+  }
+  step: number = 1
 
-  for (const item of field.split(',')) {
-    for (const n of expandFieldItem(item, 0, 59, true)) {
-      allowed.add(n)
-    }
+  values(first: number, last: number) {
+    const start = this.range ? this.range.from : first,
+            end = (this.range && this.range.to !== undefined) ? this.range.to : last,
+    rangeLength = (end < start) ? ((last - start) + (end - first) + 1) : (end - start)
+
+    return Array(Math.floor(rangeLength / this.step) + 1)
+      .fill(0)
+      .map((_, i) => first + ((start - first + (this.step*i)) % (last - first + 1)))
   }
 
-  return Array.from(allowed).sort(sortAsc)
+  get any() {
+    return this.range === undefined && this.step === 1
+  }
+
+  get single() {
+    return !!this.range && this.range.from === this.range.to
+  }
+
+  static parse(item: string, first: number, last: number, allowCyclicRange = false, transformer?: (n: number) => number) {
+    const fieldItem = new FieldItem()
+
+    const [match, all, startFrom, range, step] = (item.match(/^(?:(\*)|([0-9]+)|([0-9]+-[0-9]+))(?:\/([1-9][0-9]*))?$/) || []) as string[]
+
+    if (!match) throw new Error('Field item invalid format')
+
+    if (step) {
+      fieldItem.step = parseInt(step, 10)
+    }
+
+    if (startFrom) {
+      let start = parseInt(startFrom, 10)
+      start = transformer ? transformer(start) : start
+      if (start < first || start > last) throw new Error('Field item out of valid value range')
+
+      fieldItem.range = {
+        from: start,
+        to: step ? undefined : start
+      }
+    } else if (range) {
+      const [rangeStart, rangeEnd] = range.split('-').map(x => {
+        const n = parseInt(x, 10)
+        return transformer ? transformer(n) : n
+      })
+
+      if (
+        rangeStart < first || rangeStart > last || rangeEnd < first || rangeEnd > last ||
+        (rangeEnd < rangeStart && !allowCyclicRange)
+      ) {
+        throw new Error('Field item range invalid, either value out of valid range or start greater than end in non wraparound field')
+      }
+
+      fieldItem.range = {
+        from: rangeStart,
+        to: rangeEnd
+      }
+    }
+
+    return fieldItem
+  }
 }
 
-function hoursParser(field: string): number[] {
-  const allowed: Set<number> = new Set()
-
-  for (const item of field.split(',')) {
-    for (const n of expandFieldItem(item, 0, 23, true)) {
-      allowed.add(n)
-    }
-  }
-
-  return Array.from(allowed).sort(sortAsc)
+export class SecondsOrMinutesField extends Field {
+  readonly first = 0
+  readonly last = 59
 }
 
-export type CronosDaysExpression = {
-  include: number[]
-  last: boolean
-  lastWeekday: boolean
-  nearestWeekdays: number[]
-  daysOfWeek: number[]
-  lastDaysOfWeek: number[]
-  nthDaysOfWeek: [number, number][]
+export class HoursField extends Field {
+  readonly first = 0
+  readonly last = 23
 }
-function daysParser(daysOfMonthField: string, daysOfWeekField: string): CronosDaysExpression {
-  const expr: CronosDaysExpression = {
-    include: [],
-    last: false,
-    lastWeekday: false,
-    nearestWeekdays: [],
-    daysOfWeek: [],
-    lastDaysOfWeek: [],
-    nthDaysOfWeek: []
+
+export class DaysField {
+  lastDay = false
+  lastWeekday = false
+  daysItems: FieldItem[] = []
+  nearestWeekdayItems: FieldItem[] = []
+  daysOfWeekItems: FieldItem[] = []
+  lastDaysOfWeekItems: FieldItem[] = []
+  nthDaysOfWeekItems: {item: FieldItem, nth: number}[] = []
+
+  constructor(daysOfMonthField: string, daysOfWeekField: string) {
+    for (let item of daysOfMonthField.split(',')) {
+      if (item === 'l') {
+        this.lastDay = true
+      }
+      else if (item === 'lw') {
+        this.lastWeekday = true
+      }
+      else if (item.endsWith('w')) {
+        this.nearestWeekdayItems.push(
+          FieldItem.parse(item.slice(0, -1), 1, 31)
+        )
+      }
+      else {
+        this.daysItems.push(FieldItem.parse(item, 1, 31))
+      }
+    }
+
+    const normalisedDaysOfWeekField = daysOfWeekField.replace(
+      dayOfWeekReplacementRegex,
+      match => dayOfWeekReplacements.indexOf(match) + ''
+    )
+    const parseDayOfWeek = (item: string) => FieldItem.parse(item, 0, 6, true, n => n === 7 ? 0 : n)
+
+    for (let item of normalisedDaysOfWeekField.split(',')) {
+      const nthIndex = item.lastIndexOf('#')
+      if (item.endsWith('l')) {
+        this.lastDaysOfWeekItems.push(parseDayOfWeek(item.slice(0, -1)))
+      }
+      else if (nthIndex !== -1) {
+        const nth = item.slice(nthIndex+1)
+        if (!/^[1-5]$/.test(nth)) throw new Error('Field item nth of month (#) invalid')
+        this.nthDaysOfWeekItems.push({
+          item: parseDayOfWeek(item.slice(0, nthIndex)),
+          nth: parseInt(nth, 10)
+        }) 
+      }
+      else {
+        this.daysOfWeekItems.push(parseDayOfWeek(item))
+      }
+    }
   }
 
-  const include: Set<number> = new Set(),
-        nearestWeekdays: Set<number> = new Set(),
-        daysOfWeek: Set<number> = new Set(),
-        lastDaysOfWeek: Set<number> = new Set(),
-        nthDaysOfWeek: Set<string> = new Set()
-
-  // days of month      
-  let anyDay = true
-
-  for (let item of daysOfMonthField.split(',')) {
-    let weekday = false
-
-    if (item === '*') continue
-
-    anyDay = false
-    if (item === 'l') {
-      expr.last = true
-      continue
-    }
-    if (item === 'lw') {
-      expr.lastWeekday = true
-      continue
-    }
-
-    if (item.endsWith('w')) {
-      weekday = true
-      item = item.slice(0, -1)
-    }
-
-    for (const n of expandFieldItem(item, 1, 31)) {
-      weekday ? nearestWeekdays.add(n) : include.add(n)
-    }
+  get values() {
+    return DaysFieldValues.fromField(this)
   }
 
-  // days of week
-  const normalisedDaysOfWeekField = daysOfWeekField.replace(
-    dayOfWeekReplacementRegex,
-    match => dayOfWeekReplacements.indexOf(match) + ''
-  )
+  get allDays() {
+    return (
+      !this.lastDay &&
+      !this.lastWeekday &&
+      !this.nearestWeekdayItems.length &&
+      !this.lastDaysOfWeekItems.length &&
+      !this.nthDaysOfWeekItems.length &&
+      this.daysItems.length === 1 && this.daysItems[0].any &&
+      this.daysOfWeekItems.length === 1 && this.daysOfWeekItems[0].any
+    )
+  }
+}
 
-  let anyDaysOfWeek = true
+export class DaysFieldValues {
+  lastDay = false
+  lastWeekday = false
+  days: number[] = []
+  nearestWeekday: number[] = []
+  daysOfWeek: number[] = []
+  lastDaysOfWeek: number[] = []
+  nthDaysOfWeek: [number, number][] = []
 
-  for (let item of normalisedDaysOfWeekField.split(',')) {
-    let last = false
-    let nth = 0
+  static fromField(field: DaysField) {
+    const values = new DaysFieldValues()
 
-    if (item === '*') continue
+    const filterAnyItems = (items: FieldItem[]) => items.filter(item => !item.any)
+    values.lastDay = field.lastDay
+    values.lastWeekday = field.lastWeekday
+    values.days = Field.getValues(
+      field.allDays ? [new FieldItem()] : filterAnyItems(field.daysItems),
+      1, 31)
+    values.nearestWeekday = Field.getValues(field.nearestWeekdayItems, 1, 31)
+    values.daysOfWeek = Field.getValues(filterAnyItems(field.daysOfWeekItems), 0, 6)
+    values.lastDaysOfWeek = Field.getValues(field.lastDaysOfWeekItems, 0, 6)
 
-    anyDaysOfWeek = false
-
-    if (item.endsWith('l')) {
-      last = true
-      item = item.slice(0, -1)
-    } else if (item.includes('#')) {
-      let match = item.match(/^.+#([1-5])$/)
-      if (!match) throw new Error('Field item nth of month (#) invalid')
-      nth = parseInt(match[1], 10)
-      item = item.slice(0, item.indexOf('#'))
-    }
-
-    let days = expandFieldItem(item, 0, 6, true, n => n === 7 ? 0 : n)
-
-    if (nth) {
-      for (const n of days) {
-        const hash = n+'/'+nth
-        if (!nthDaysOfWeek.has(hash)) {
-          nthDaysOfWeek.add(hash)
-          expr.nthDaysOfWeek.push([n, nth])
+    const nthDaysHashes = new Set<number>()
+    for (let item of field.nthDaysOfWeekItems) {
+      for (let n of item.item.values(0, 6)) {
+        let hash = n*10+item.nth
+        if (!nthDaysHashes.has(hash)) {
+          nthDaysHashes.add(hash)
+          values.nthDaysOfWeek.push([n, item.nth])
         }
       }
-      continue
     }
 
-    const set = last ? lastDaysOfWeek : daysOfWeek
-    for (const n of days) {
-      set.add(n)
-    }
+    return values
   }
 
-  expr.include = (anyDay && anyDaysOfWeek) ?
-    expandFieldItem('*', 1, 31) :
-    Array.from(include).sort(sortAsc)
+  getDays(year: number, month: number): number[] {
+    const days: Set<number> = new Set(this.days)
 
-  expr.nearestWeekdays = Array.from(nearestWeekdays).sort(sortAsc)
-  expr.daysOfWeek = Array.from(daysOfWeek).sort(sortAsc)
-  expr.lastDaysOfWeek = Array.from(lastDaysOfWeek).sort(sortAsc)
+    const lastDateOfMonth = new Date(year, month, 0).getDate()
+    const firstDayOfWeek = new Date(year, month-1, 1).getDay()
 
-  return expr
+    const getNearestWeekday = (day: number) => {
+      if (day > lastDateOfMonth) day = lastDateOfMonth
+      const dayOfWeek = (day + firstDayOfWeek - 1) % 7
+      let weekday = day + (dayOfWeek === 0 ? 1 : (dayOfWeek === 6 ? -1 : 0))
+      return weekday + (weekday < 1 ? 3 : (weekday > lastDateOfMonth ? -3 : 0))
+    }
+
+    if (this.lastDay) {
+      days.add(lastDateOfMonth)
+    }
+    if (this.lastWeekday) {
+      days.add( getNearestWeekday(lastDateOfMonth) )
+    }
+    for (const day of this.nearestWeekday) {
+      days.add( getNearestWeekday(day) )
+    }
+
+    if (this.daysOfWeek.length ||
+        this.lastDaysOfWeek.length ||
+        this.nthDaysOfWeek.length
+    ) {
+      const daysOfWeek: number[][] = Array(7).fill(0).map(() => ([]))
+      for (let day = 1; day < 36; day++) {
+        daysOfWeek[(day + firstDayOfWeek - 1) % 7].push(day)
+      }
+
+      for (const dayOfWeek of this.daysOfWeek) {
+        for (const day of daysOfWeek[dayOfWeek]) {
+          days.add(day)
+        }
+      }
+      for (const dayOfWeek of this.lastDaysOfWeek) {
+        for (let i = daysOfWeek[dayOfWeek].length-1; i >= 0; i--) {
+          if (daysOfWeek[dayOfWeek][i] <= lastDateOfMonth) {
+            days.add(daysOfWeek[dayOfWeek][i])
+            break
+          }
+        }
+      }
+      for (const [dayOfWeek, nthOfMonth] of this.nthDaysOfWeek) {
+        days.add(daysOfWeek[dayOfWeek][nthOfMonth-1])
+      }
+    }
+
+    return Array.from(days).filter(day => day <= lastDateOfMonth).sort(sortAsc)
+  }
 }
 
-function monthsParser(field: string): number[] {
-  const allowed: Set<number> = new Set()
+export class MonthsField extends Field {
+  readonly first = 1
+  readonly last = 12
 
-  const normalisedField = field.replace(monthReplacementRegex, match => {
-    return monthReplacements.indexOf(match) + 1 + ''
-  })
-
-  for (const item of normalisedField.split(',')) {
-    for (const n of expandFieldItem(item, 1, 12, true)) {
-      allowed.add(n)
-    }
+  constructor(field: string) {
+    super(
+      field.replace(monthReplacementRegex, match => {
+        return monthReplacements.indexOf(match) + 1 + ''
+      })
+    )
   }
-
-  return Array.from(allowed).sort(sortAsc)
 }
 
-function yearsParser(field: string): number[] {
-  const allowed: Set<number> = new Set()
+export class YearsField extends Field {
+  readonly first = 1970
+  readonly last = 2099
 
-  for (const item of field.split(',')) {
-    for (const n of expandFieldItem(item, 1970, 2099)) {
-      allowed.add(n)
-    }
+  constructor(field: string) {
+    super(field)
+    this.items
   }
 
-  return Array.from(allowed).sort(sortAsc)
+  protected parse() {
+    return this.field.split(',')
+      .map(item => FieldItem.parse(item, 0, maxValidYear))
+  }
+
+  nextYear(fromYear: number) {
+    return this.items.reduce<number[]>((years, item) => {
+      if (item.any) years.push(fromYear)
+      else if (item.single) {
+        const year = (item.range as {from: number}).from
+        if (year >= fromYear) years.push(year)
+      }
+      else {
+        const start = item.range && item.range.from || this.first
+        if (start > fromYear) years.push(start)
+        else {
+          const nextYear = start + Math.ceil((fromYear - start) / item.step) * item.step
+          if (nextYear <= (item.range && item.range.to || maxValidYear)) years.push(nextYear)
+        }
+      }
+      return years
+    }, []).sort(sortAsc)[0] || null
+  }
 }
