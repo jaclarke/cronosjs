@@ -146,4 +146,74 @@ describe('Year field', () => {
     ])
   })
 
+  test('16:10, last day of Feb, 2035 to 2045', () => {
+    expect(
+      CronosExpression.parse('0 10 16 L Feb * 2035-2045')
+        .nextNDates(new Date(2019, 3, 21, 11, 23, 45), 15)
+    ).toEqual([
+      new Date(2035, 1, 28, 16, 10, 0),
+      new Date(2036, 1, 29, 16, 10, 0),
+      new Date(2037, 1, 28, 16, 10, 0),
+      new Date(2038, 1, 28, 16, 10, 0),
+      new Date(2039, 1, 28, 16, 10, 0),
+      new Date(2040, 1, 29, 16, 10, 0),
+      new Date(2041, 1, 28, 16, 10, 0),
+      new Date(2042, 1, 28, 16, 10, 0),
+      new Date(2043, 1, 28, 16, 10, 0),
+      new Date(2044, 1, 29, 16, 10, 0),
+      new Date(2045, 1, 28, 16, 10, 0)
+    ])
+  })
+
+  test('16:10, 1st Jan, every 3 years', () => {
+    expect(
+      CronosExpression.parse('0 10 16 1 1 * */3')
+        .nextNDates(new Date(2019, 3, 21, 11, 23, 45))
+    ).toEqual([
+      new Date(2021, 0, 1, 16, 10, 0),
+      new Date(2024, 0, 1, 16, 10, 0),
+      new Date(2027, 0, 1, 16, 10, 0),
+      new Date(2030, 0, 1, 16, 10, 0),
+      new Date(2033, 0, 1, 16, 10, 0)
+    ])
+  })
+
+  test('16:10, 1st Jan, 2022 onwards', () => {
+    expect(
+      CronosExpression.parse('0 10 16 1 1 * 2022/1')
+        .nextNDates(new Date(2019, 3, 21, 11, 23, 45))
+    ).toEqual([
+      new Date(2022, 0, 1, 16, 10, 0),
+      new Date(2023, 0, 1, 16, 10, 0),
+      new Date(2024, 0, 1, 16, 10, 0),
+      new Date(2025, 0, 1, 16, 10, 0),
+      new Date(2026, 0, 1, 16, 10, 0)
+    ])
+  })
+
+  test('16:10, 1st Jan, every 3 years from 2012 to 2030', () => {
+    expect(
+      CronosExpression.parse('0 10 16 1 1 * 2012-2030/3')
+        .nextNDates(new Date(2019, 3, 21, 11, 23, 45))
+    ).toEqual([
+      new Date(2021, 0, 1, 16, 10, 0),
+      new Date(2024, 0, 1, 16, 10, 0),
+      new Date(2027, 0, 1, 16, 10, 0),
+      new Date(2030, 0, 1, 16, 10, 0)
+    ])
+  })
+
+  test('16:10, 1st Jan, every other year 275750 onwards (near year limit)', () => {
+    expect(
+      CronosExpression.parse('0 10 16 1 1 * 275750/2')
+        .nextNDates(new Date(2019, 3, 21, 11, 23, 45), 10)
+    ).toEqual([
+      new Date(275750, 0, 1, 16, 10, 0),
+      new Date(275752, 0, 1, 16, 10, 0),
+      new Date(275754, 0, 1, 16, 10, 0),
+      new Date(275756, 0, 1, 16, 10, 0),
+      new Date(275758, 0, 1, 16, 10, 0)
+    ])
+  })
+
 })

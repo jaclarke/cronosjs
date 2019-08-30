@@ -298,25 +298,25 @@ describe('Invalid year field', () => {
 
   test('Too small value', () => {
     expect(
-      () => CronosExpression.parse('* * * * * * 1969')
+      () => CronosExpression.parse('* * * * * * -1')
     ).toThrow()
   })
 
   test('Min valid value', () => {
     expect(
-      () => CronosExpression.parse('* * * * * * 1970')
+      () => CronosExpression.parse('* * * * * * 0')
     ).not.toThrow()
   })
 
   test('Max valid value', () => {
     expect(
-      () => CronosExpression.parse('* * * * * * 2099')
+      () => CronosExpression.parse('* * * * * * 275759')
     ).not.toThrow()
   })
 
   test('Too large value', () => {
     expect(
-      () => CronosExpression.parse('* * * * * * 2100')
+      () => CronosExpression.parse('* * * * * * 275760')
     ).toThrow()
   })
 
