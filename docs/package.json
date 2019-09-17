@@ -1,0 +1,17 @@
+{
+  "name": "cronosjs-docs",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vuepress dev docs",
+    "build": "vuepress build docs"
+  },
+  "devDependencies": {
+    "@vuepress/plugin-back-to-top": "^1.0.0",
+    "lodash": "^4.17.15",
+    "vuepress": "^1.0.0"
+  },
+  "dependencies": {
+    "vuex": "^3.1.1",
+    "vuex-router-sync": "^5.0.0"
+  }
+}
