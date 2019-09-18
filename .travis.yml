@@ -7,3 +7,15 @@ script:
   - npm run build
   - jest --coverage
   - cat ./coverage/lcov.info | coveralls
+before_deploy:
+  - cd docs
+  - npm ci
+  - npm run build
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN
+  local_dir: docs/docs/.vuepress/dist
+  target_branch: gh-pages
+  on:
+    branch: docs
