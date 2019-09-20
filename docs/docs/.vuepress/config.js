@@ -1,6 +1,7 @@
 module.exports = {
   title: 'CronosJS',
   description: 'Cron library',
+  base: '/cronosjs/',
 
   head: [
     // ['meta', { name: 'theme-color', content: '#3eaf7c' }],
