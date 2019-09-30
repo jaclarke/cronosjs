@@ -48,6 +48,9 @@ export function createStore(router) {
       cronString(state) {
         return (state.route.query.cron || '').replace(/_|!|~|'/g, char => urlCharMapping[char])
       },
+      timezone(state) {
+        return state.route.query.timezone
+      },
       fieldIndexes(state, {cronString}) {
         const regex = /\S+/g,
               indexes = []
@@ -114,8 +117,17 @@ export function createStore(router) {
       },
     },
     actions: {
-      updateCronString(context, val) {
-        router.replace({query: {cron: val.replace(/\s|\/|#|@/g, char => urlCharMapping[char])}})
+      updateCronString({state}, val) {
+        router.replace({query: {
+          ...state.route.query,
+          cron: val.replace(/\s|\/|#|@/g, char => urlCharMapping[char])
+        }})
+      },
+      updateTimezone({state}, val) {
+        router.replace({query: {
+          ...state.route.query,
+          timezone: val || undefined
+        }})
       },
     },
     mutations: {

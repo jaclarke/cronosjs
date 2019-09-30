@@ -2,7 +2,10 @@
   <div class="cron-demo">
     <cron-input />
     <cron-description />
-    <timezone-input />
+
+    <div class="options">
+      <timezone-input />
+    </div>
   </div>
 </template>
 
@@ -28,4 +31,9 @@ export default {
   flex-direction: column
   align-items: center
   text-align: start
+
+.options
+  display: flex
+  align-self: stretch
+  margin-top: 3em
 </style>

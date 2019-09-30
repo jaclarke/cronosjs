@@ -22,13 +22,27 @@ export default {
 
 <style lang="stylus">
 .home--hero
+  position: relative
   display: flex
   flex-direction: column
   background: linear-gradient(120deg, #80b1c9, #7c8ac1)
   padding: 3em
   padding-bottom: 5em
   text-align: center
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 calc(100% - 4vw))
+
+  &:after
+    content: ''
+    position: absolute
+    left: 0
+    right: 0
+    bottom: 0
+    height: 4vw
+    background: #fff
+    clip-path: polygon(0 0, 100% 100%, 0 100%)
+    z-index: 0
+
+.content__hero
+  z-index: 101
 
 .home--nav
   display: flex

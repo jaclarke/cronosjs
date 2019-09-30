@@ -2050,6 +2050,56 @@
     "region": "Etc",
     "zones": [
       {
+        "name": "Etc/UTC",
+        "aliases": [
+          {
+            "name": "UTC"
+          }
+        ]
+      },
+      {
+        "name": "Etc/GMT-14"
+      },
+      {
+        "name": "Etc/GMT-13"
+      },
+      {
+        "name": "Etc/GMT-12"
+      },
+      {
+        "name": "Etc/GMT-11"
+      },
+      {
+        "name": "Etc/GMT-10"
+      },
+      {
+        "name": "Etc/GMT-9"
+      },
+      {
+        "name": "Etc/GMT-8"
+      },
+      {
+        "name": "Etc/GMT-7"
+      },
+      {
+        "name": "Etc/GMT-6"
+      },
+      {
+        "name": "Etc/GMT-5"
+      },
+      {
+        "name": "Etc/GMT-4"
+      },
+      {
+        "name": "Etc/GMT-3"
+      },
+      {
+        "name": "Etc/GMT-2"
+      },
+      {
+        "name": "Etc/GMT-1"
+      },
+      {
         "name": "Etc/GMT",
         "aliases": [
           {
@@ -2067,58 +2117,7 @@
         ]
       },
       {
-        "name": "Etc/GMT-1"
-      },
-      {
-        "name": "Etc/GMT-10"
-      },
-      {
-        "name": "Etc/GMT-11"
-      },
-      {
-        "name": "Etc/GMT-12"
-      },
-      {
-        "name": "Etc/GMT-13"
-      },
-      {
-        "name": "Etc/GMT-14"
-      },
-      {
-        "name": "Etc/GMT-2"
-      },
-      {
-        "name": "Etc/GMT-3"
-      },
-      {
-        "name": "Etc/GMT-4"
-      },
-      {
-        "name": "Etc/GMT-5"
-      },
-      {
-        "name": "Etc/GMT-6"
-      },
-      {
-        "name": "Etc/GMT-7"
-      },
-      {
-        "name": "Etc/GMT-8"
-      },
-      {
-        "name": "Etc/GMT-9"
-      },
-      {
         "name": "Etc/GMT+1"
-      },
-      {
-        "name": "Etc/GMT+10"
-      },
-      {
-        "name": "Etc/GMT+11"
-      },
-      {
-        "name": "Etc/GMT+12"
       },
       {
         "name": "Etc/GMT+2"
@@ -2145,12 +2144,13 @@
         "name": "Etc/GMT+9"
       },
       {
-        "name": "Etc/UTC",
-        "aliases": [
-          {
-            "name": "UTC"
-          }
-        ]
+        "name": "Etc/GMT+10"
+      },
+      {
+        "name": "Etc/GMT+11"
+      },
+      {
+        "name": "Etc/GMT+12"
       }
     ]
   }
