@@ -51,6 +51,9 @@ export function createStore(router) {
       timezone(state) {
         return state.route.query.timezone
       },
+      missingHour(state) {
+        return state.route.query.missingHour || 'insert'
+      },
       fieldIndexes(state, {cronString}) {
         const regex = /\S+/g,
               indexes = []
@@ -127,6 +130,12 @@ export function createStore(router) {
         router.replace({query: {
           ...state.route.query,
           timezone: val || undefined
+        }})
+      },
+      updateMissingHour({state}, val) {
+        router.replace({query: {
+          ...state.route.query,
+          missingHour: val || undefined
         }})
       },
     },
