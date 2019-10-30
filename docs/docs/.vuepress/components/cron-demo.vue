@@ -6,11 +6,15 @@
     <div class="options">
       <timezone-input />
 
+      <input type="checkbox" v-model="skipRepeatedHour">
+
       <div class="missing-hour">
         <dropdown-select :items="missingHourItems" v-model="missingHour" />
         <label>Missing hour</label>
       </div>
     </div>
+
+    <cron-clock />
   </div>
 </template>
 
@@ -19,9 +23,10 @@ import cronInput from '../../../components/cronInput'
 import cronDescription from '../../../components/cronDescription'
 import timezoneInput from '../../../components/timezoneInput'
 import dropdownSelect from '../../../components/dropdownSelect'
+import cronClock from '../../../components/cronClock'
 
 export default {
-  components: { cronInput, cronDescription, timezoneInput, dropdownSelect },
+  components: { cronInput, cronDescription, timezoneInput, dropdownSelect, cronClock },
   data() {
     return {
       missingHourItems: ['insert', 'skip', 'offset'],
@@ -34,6 +39,14 @@ export default {
       },
       set(val) {
         return this.$store.dispatch('updateMissingHour', val)
+      },
+    },
+    skipRepeatedHour: {
+      get() {
+        return this.$store.getters.skipRepeatedHour
+      },
+      set(val) {
+        return this.$store.dispatch('updateSkipRepeatedHour', val)
       },
     }
   },

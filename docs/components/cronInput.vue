@@ -167,6 +167,7 @@ input
     bottom: 0
     display: flex
     justify-content: center
+    text-align: center
 
   span
     display: block

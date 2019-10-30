@@ -8,6 +8,9 @@ import {
   MonthsField,
   YearsField,
 } from '../../pkg/dist-src/parser'
+import {
+  CronosTimezone
+} from '../../pkg/dist-src/date'
 
 const urlCharMapping = {
   ' ': '_',
@@ -51,8 +54,22 @@ export function createStore(router) {
       timezone(state) {
         return state.route.query.timezone
       },
+      tz(_, {timezone}) {
+        if (!timezone) return;
+        try {
+          return new CronosTimezone(timezone)
+        } catch {}
+      },
       missingHour(state) {
         return state.route.query.missingHour || 'insert'
+      },
+      skipRepeatedHour(state) {
+        const skipRepeated = state.route.query.skipRepeatedHour
+        return skipRepeated === undefined ? true : skipRepeated !== 'false'
+      },
+      selectedDate(state) {
+        const date = new Date(state.route.query.date)
+        return isNaN(date.getTime()) ? null : date
       },
       fieldIndexes(state, {cronString}) {
         const regex = /\S+/g,
@@ -136,6 +153,12 @@ export function createStore(router) {
         router.replace({query: {
           ...state.route.query,
           missingHour: val || undefined
+        }})
+      },
+      updateSkipRepeatedHour({state}, val) {
+        router.replace({query: {
+          ...state.route.query,
+          skipRepeatedHour: val === undefined ? undefined : String(val)
         }})
       },
     },
