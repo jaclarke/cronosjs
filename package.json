@@ -9,7 +9,7 @@
     "timezone support"
   ],
   "scripts": {
-    "build": "pack build",
+    "build": "pika build",
     "test": "jest"
   },
   "author": "James Clarke <jaclarke77@gmail.com>",
