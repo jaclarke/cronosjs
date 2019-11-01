@@ -94,10 +94,10 @@ taskFromDates
 `--|--|--|--|--|--|->  Second (optional)  0-59              * / , -
    `--|--|--|--|--|->  Minute             0-59              * / , -
       `--|--|--|--|->  Hour               0-23              * / , -
-         `--|--|--|->  Day of Month       1-31              * / , - L W
+         `--|--|--|->  Day of Month       1-31              * / , - ? L W
             `--|--|->  Month              1-12 or JAN-DEC   * / , -
-               `--|->  Day of Week        0-7 or SUN-SAT    * / , - L #
-                  `->  Year (optional)    1970-2099         * / , -
+               `--|->  Day of Week        0-7 or SUN-SAT    * / , - ? L #
+                  `->  Year (optional)    0-275759          * / , -
 ```
 
 A cron expression is defined by between 5 and 7 fields separated by whitespace, as detailed above. Each field can contain an integer value in the allowed values range for that field, a three letter abbreviation (case insensitive) for the *Day of Week* and *Month* fields, or an expression containing a symbol.
@@ -109,14 +109,22 @@ For the *Day of Week* field, `0` and `7` are equivalent to `Sun` , `1 = Mon` , .
 > **Note** If only 5 fields are given, both the optional *second* and *year* fields will be given their default values of `0` and `*` respectively.  
 > If 6 fields are given, the first field is assumed to be the *second* field, and the *year* field given its default value.
 
+> **Why the 0 to 275759 allowed year range?**  
+> The JS Date object supports dates 8,640,000,000,000,000 milliseconds either side of the 1st Jan, 1970 UTC ([ECMAScript 2019 Specification](https://www.ecma-international.org/ecma-262/10.0/index.html#sec-time-values-and-time-range)), giving a maximum valid date of 13th Sep, 275760. Therefore the largest full year representable as a JS Date is 275759.  
+> The year 0 is chosen as the minimum, disallowing negative years, to avoid confusion with the range symbol (`-`).
+
 ---
 
 The following symbols are valid for any field:
 
-### All values (`*`)
-Selects all allowed values in the *second*, *minute*, *hour*, *month* and *year* fields.
+### All / Any values (`*`)
+Selects all allowed values in the *second*, *minute*, *hour*, *month* and *year* fields. If part of a list of expressions in any of those fields, `*` will effectively override any other expression in that field.  
+Can also be used as part of an expression containing the special symbols `/`, `L`, `W` or `#` as detailed below, where it similarly acts as a range of all valid values for that field, eg. in the *hour* field acts as `0-23`.
 
-In the *Day of Month* and *Day of Week* fields, if both fields have an `*` all days will be selected, otherwise if only one field has an `*` it will not select anything for that field, effectively acting as an empty placeholder.
+In the *Day of Month* and *Day of Week* fields, `*` on its own acts as a placeholder, matching any day (sometimes referred to as "no specific value"), and is overridden by any other expression listed in either *"Day of ..."* field. Only if both fields are '`*`', will the symbol have an effect, selecting every day of the month.  
+If part of another expression, it acts as above.
+
+The `?` symbol can be used as an alias for '`*`' (on its own) in the *Day of Month* and *Day of Week* fields.
 
 ### List (`,`)
 Separates a list of expressions for a field.
@@ -141,15 +149,31 @@ Defines increments of a range. Can be used in three ways:
 
 ---
 
-The following symbols are valid only for the *Day of Month* and/or *Day of Week* fields:
+The following symbols are valid only for the *Day of Month* and/or *Day of Week* fields, and can be combined with any valid expression above (unless specified otherwise):
+
+### No Specific Value (`?`)
+An alias for '`*`' in the *Day of Month* and *Day of Week* fields.
+
+> **Note** Is not valid as part of another expression, eg. `?/2`, `?W` and `?#3` are invalid.
 
 ### Last day (`L`)
-When used in the *Day of Month* field, means the last day of that month.
+When used in the *Day of Month* field, must be on its own, and means the last day of that month.
 
-When used in the *Day of Week* field, means the last specified day of week of that month, eg. `WedL` selects the last Wednesday of the month.
+When used in the *Day of Week* field, must be used as a suffix on another expression, and means the last specified day(s) of week of that month.
+
+Examples:
+ - `WedL` selects the last Wednesday of the month
+ - `*L` selects the whole last week of the month
+ - `Mon-WedL` selects the last Monday, Tuesday and Wednesday of the month
 
 ### Nearest weekday (`W`)
-The `W` symbol is only valid for the *Day of Month* field, and will select the nearest weekday (Mon-Fri) to the given day. 
+The `W` symbol is only valid as a suffix for the *Day of Month* field, and will select the nearest weekday(s) (Mon-Fri) to the given day(s) if that day is a Saturday or Sunday, otherwise will select the given day.
+
+Examples:
+ - `14W` selects the nearest weekday to the 14th of the month
+ - `*W` selects every weekday of the month (same as writing `Mon-Fri` in the *Day of Week* field)
+ - `5-12W` selects the nearest weekdays to everyday from the 5th to the 12th of the month
+ - `18/3W` selects the nearest weekdays to the 18th, 21st, 24th, 27th and 30th of the month
 
 > **Note** If the given day is the start or end of the month, the nearest weekday will not be selected if it is in another month, instead the next nearest weekday in the same month will be selected.
 >
@@ -163,7 +187,12 @@ The `W` symbol is only valid for the *Day of Month* field, and will select the n
 Last day and nearest weekday can be combined, ie. `LW`, to select the last weekday of month.
 
 ### Nth of month (`#`)
-The `#` symbol is only valid for the *Day of Week* field, and must be followed by a number `1-5`, eg. `Tue#3` meaning the 3rd Tuesday of the month.
+The `#` symbol is only valid as a suffix for the *Day of Week* field expression, and must be followed by a number `1-5`
+
+Examples:
+ - `Tue#3` selects the 3rd Tuesday of the month
+ - `*#2` selects the whole 2nd week of the month
+ - `Thu-Mon/2#4` selects the 4th Thu, Sat and Mon of the month
 
 
 ## Timezone support

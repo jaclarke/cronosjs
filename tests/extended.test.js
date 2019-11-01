@@ -13,6 +13,23 @@ test('6 stars (* * * * * *)', () => {
   ])
 })
 
+test('? symbol', () => {
+  expect(() => CronosExpression.parse('? * * * *')).toThrow()
+  expect(() => CronosExpression.parse('* ? * * *')).toThrow()
+  expect(() => CronosExpression.parse('* * ? * *')).not.toThrow()
+  expect(() => CronosExpression.parse('* * * ? *')).toThrow()
+  expect(() => CronosExpression.parse('* * * * ?')).not.toThrow()
+  expect(() => CronosExpression.parse('* * ?/3 * *')).toThrow()
+  expect(() => CronosExpression.parse('* * * * ?#3')).toThrow()
+
+  const now = new Date()
+  expect(
+    CronosExpression.parse('0 0 ? Jan ?').nextNDates(now)
+  ).toEqual(
+    CronosExpression.parse('0 0 * Jan *').nextNDates(now)
+  )
+})
+
 describe('Last day (L)', () => {
   test('Last day of month', () => {
     expect(

@@ -182,7 +182,7 @@ export class DaysField {
   nthDaysOfWeekItems: {item: FieldItem, nth: number}[] = []
 
   constructor(daysOfMonthField: string, daysOfWeekField: string) {
-    for (let item of daysOfMonthField.split(',')) {
+    for (let item of daysOfMonthField.split(',').map(s => s==='?'?'*':s)) {
       if (item === 'l') {
         this.lastDay = true
       }
@@ -205,7 +205,7 @@ export class DaysField {
     )
     const parseDayOfWeek = (item: string) => FieldItem.parse(item, 0, 6, true, n => n === 7 ? 0 : n)
 
-    for (let item of normalisedDaysOfWeekField.split(',')) {
+    for (let item of normalisedDaysOfWeekField.split(',').map(s => s==='?'?'*':s)) {
       const nthIndex = item.lastIndexOf('#')
       if (item.endsWith('l')) {
         this.lastDaysOfWeekItems.push(parseDayOfWeek(item.slice(0, -1)))
