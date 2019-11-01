@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0] - 01 Nov 2019
+### Added
+ - Support for the `?` symbol as a alias to `*` in the *Day of Month* and *Day of Week* fields
+### Changed
+ - Larger year range (now 0-275759, previously 1970-2099) allowed in year field
+ - Improved documentation on cron expression syntax
+
 ## [1.4.0] - 07 Aug 2019
 ### Added
  - Support for providing a date, array of dates, or a custom date sequence to `new CronosTask()` instead of a `CronosExpression` object
