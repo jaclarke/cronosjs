@@ -44,7 +44,11 @@ scheduleTask('5/20 1 * Mar SunL', (timestamp) => {
 })
 
 // validate cron string
-validate('* * 5 smarch *') // === false
+validate('* * 5 smarch *') // false
+
+validate('0 1/120 * * * *', {
+  strict: true
+}) // false
 
 // get next cron date
 CronosExpression.parse('* * 2/5 Jan *').nextDate()
@@ -67,6 +71,19 @@ task
     console.log(`No more dates matching expression`)
   })
   .start()
+
+// strict mode / warnings
+CronosExpression.parse('0 1/120 * * * *', {
+  strict: true
+}) // Error: Strict mode: Parsing failed with 1 warnings
+
+const strictExpr = CronosExpression.parse('0 1/120 * * * *')
+
+console.log(strictExpr.warnings)
+// [{
+//   type: 'IncrementLargerThanRange',
+//   message: "Increment (120) is larger than range (58) for expression '1/120'"
+// }]
 
 // schedule tasks from a list of dates
 const taskFromDates = new CronosTask([
@@ -277,22 +294,26 @@ import {
  - `task: (timestamp: number) => void`  
   The function to run on each execution of the task. Is called with the timestamp of when the task was scheduled to run.
 
- - `options: { timezone?, skipRepeatedHour?, missingHour? }` (optional)
+ - `options: { timezone?, skipRepeatedHour?, missingHour?, strict? }` (optional)
     - `timezone: CronosTimezone | string | number` (optional)  
     Timezone in which to schedule the tasks, can be either a `CronosTimezone` object, or any IANA timezone or offset accepted by the [`CronosTimezone` constructor](#cronostimezone)
     - `skipRepeatedHour: boolean` (optional)  
     Should tasks be scheduled in the repeated hour when DST ends. [Further details](#skiprepeatedhour-option)
     - `missingHour: 'insert' | 'offset' | 'skip'` (optional)  
     How tasks should be scheduled in the missing hour when DST starts. [Further details](#missinghour-option)
+    - `strict: boolean | {<WarningType>: boolean, ...}` (optional)  
+    Should an error be thrown if warnings occur during parsing. If `true`, will throw for all `WarningType`'s, alternatively an object can be provided with `WarningType`'s as the keys and boolean values to individually select which `WarningType`'s trigger an error to be thown. `WarningTypes`'s are listed in the [`CronosExpression.warnings`](#cronosexpression) documentation.
 
  - **Returns**  [`CronosTask`](#cronostask)
 
 
 ### validate
-```function validate(cronString)```
+```function validate(cronString, options?)```
 
  - `cronString: string`  
   Cron string to validate
+ - `options: { strict? }`
+  Same as `strict` option documented in [`scheduleTask`](#scheduletask)
 
  - **Returns** `boolean`  
   Is cron string syntax valid
@@ -304,6 +325,16 @@ import {
 #### Properties
  - `cronString: string` (readonly)  
   Original cron string passed to `CronosExpression.parse`
+ - `warnings: Warning[]` (readonly)  
+  A list of warnings that occurred during parsing the expression.
+  ```typescript
+  interface Warning {
+    type: WarningType
+    message: string
+  }
+
+  type WarningType = 'IncrementLargerThanRange'
+  ```
 
 #### Static Methods
  - `CronosExpression.parse(cronString, options)`  

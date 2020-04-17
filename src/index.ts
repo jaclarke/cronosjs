@@ -5,11 +5,7 @@ import { CronosTimezone } from './date'
 export function scheduleTask(
   cronString: string,
   task: (timestamp: number) => void,
-  options?: {
-    timezone?: string | number
-    skipRepeatedHour?: boolean
-    missingHour?: 'insert' | 'offset' | 'skip'
-  }
+  options: Parameters<typeof CronosExpression.parse>[1]
 ) {
   const expression = CronosExpression.parse(cronString, options)
 
@@ -18,9 +14,14 @@ export function scheduleTask(
     .start()
 }
 
-export function validate(cronString: string) {
+export function validate(
+  cronString: string,
+  options?: {
+    strict: NonNullable<Parameters<typeof CronosExpression.parse>[1]>['strict']
+  }
+) {
   try {
-    CronosExpression.parse(cronString)
+    CronosExpression.parse(cronString, options)
   } catch {
     return false
   }
