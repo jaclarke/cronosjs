@@ -1,6 +1,7 @@
 import { _parse, DaysFieldValues, YearsField, WarningType, Warning } from './parser'
 import { CronosDate, CronosTimezone } from './date'
 import { DateSequence } from './scheduler'
+import { flatMap } from './utils'
 
 const hourinms = 60 * 60 * 1000
 const findFirstFrom = (from: number, list: number[]) => list.findIndex(n => n >= from)
@@ -30,7 +31,7 @@ export class CronosExpression implements DateSequence {
     const parsedFields = _parse(cronstring)
 
     if (options.strict) {
-      let warnings = parsedFields.flatMap(field => field.warnings)
+      let warnings = flatMap(parsedFields, field => field.warnings)
       if (typeof options.strict === 'object') {
         warnings = warnings
           .filter(warning => !!(options.strict as {[key in WarningType]?: boolean})[warning.type])
@@ -53,7 +54,7 @@ export class CronosExpression implements DateSequence {
     expr.timezone = options.timezone instanceof CronosTimezone ? options.timezone :
       (options.timezone !== undefined ? new CronosTimezone(options.timezone) : undefined)
     expr.skipRepeatedHour = options.skipRepeatedHour !== undefined ? options.skipRepeatedHour : expr.skipRepeatedHour
-    expr.missingHour = options.missingHour || expr.missingHour
+    expr.missingHour = options.missingHour ?? expr.missingHour
 
     return expr
   }
@@ -61,16 +62,16 @@ export class CronosExpression implements DateSequence {
   get warnings() {
     if (!this._warnings) {
       const parsedFields = _parse(this.cronString)
-      this._warnings = parsedFields.flatMap(field => field.warnings)
+      this._warnings = flatMap(parsedFields, field => field.warnings)
     }
 
     return this._warnings
   }
 
   toString() {
-    const showTzOpts = !this.timezone || this.timezone.zoneName
+    const showTzOpts = !this.timezone || !!this.timezone.zoneName
     const timezone = Object.entries({
-      tz: this.timezone && this.timezone.toString() || 'Local',
+      tz: this.timezone?.toString() ?? 'Local',
       skipRepeatedHour: showTzOpts && this.skipRepeatedHour.toString(),
       missingHour: showTzOpts && this.missingHour,
     }).map(([key, val]) => val && key+': '+val).filter(s => s).join(', ')
@@ -80,7 +81,7 @@ export class CronosExpression implements DateSequence {
   nextDate(afterDate: Date = new Date()): Date | null {
     const fromCronosDate = CronosDate.fromDate(afterDate, this.timezone)
 
-    if (this.timezone && this.timezone.fixedOffset !== undefined) {
+    if (this.timezone?.fixedOffset !== undefined) {
       return this._next(fromCronosDate).date
     }
 

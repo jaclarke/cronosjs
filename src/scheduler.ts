@@ -4,8 +4,8 @@ const scheduledTasks: CronosTask[] = []
 let runningTimer: number | null = null
 
 function addTask(task: CronosTask) {
-  if (task['_timestamp']) {
-    const insertIndex = scheduledTasks.findIndex(t => (t['_timestamp'] || 0) < (task['_timestamp'] || 0))
+  if (task['_timestamp'] !== undefined) {
+    const insertIndex = scheduledTasks.findIndex(t => t['_timestamp']! < task['_timestamp']!)
     if (insertIndex >= 0) scheduledTasks.splice(insertIndex, 0, task)
     else scheduledTasks.push(task)
   }
@@ -26,7 +26,7 @@ function runScheduledTasks() {
 
   const now = Date.now()
 
-  const removeIndex = scheduledTasks.findIndex(task => (task['_timestamp'] || 0) <= now)
+  const removeIndex = scheduledTasks.findIndex(task => task['_timestamp']! <= now)
   const tasksToRun = removeIndex >= 0 ? scheduledTasks.splice(removeIndex) : []
 
   for (let task of tasksToRun) {
@@ -40,7 +40,7 @@ function runScheduledTasks() {
   const nextTask = scheduledTasks[scheduledTasks.length - 1]
   if (nextTask) {
     runningTimer = setTimeout(runScheduledTasks,
-      Math.min((nextTask['_timestamp'] || 0) - Date.now(), maxTimeout))
+      Math.min(nextTask['_timestamp']! - Date.now(), maxTimeout))
   } else runningTimer = null
 }
 
@@ -105,7 +105,7 @@ export class CronosTask {
     this._updateTimestamp()
     addTask(this)
     runScheduledTasks()
-    if (this._timestamp) this._emit('started')
+    if (this.isRunning) this._emit('started')
     return this
   }
 
@@ -117,11 +117,11 @@ export class CronosTask {
   }
 
   get nextRun() {
-    return this._timestamp ? new Date(this._timestamp) : undefined
+    return this.isRunning ? new Date(this._timestamp!) : undefined
   }
 
   get isRunning() {
-    return !!this._timestamp
+    return this._timestamp !== undefined
   }
 
   private _runTask() {
@@ -130,15 +130,19 @@ export class CronosTask {
 
   private _updateTimestamp() {
     const nextDate = this._sequence.nextDate(
-      this._timestamp ? new Date(this._timestamp) : new Date()
+      this._timestamp !== undefined ? new Date(this._timestamp) : new Date()
     )
 
     let timestamp = nextDate ? nextDate.getTime() : undefined
-    if (this._timestamp && timestamp && timestamp < (this._timestamp + 1000)) timestamp = this._timestamp + 1000
+    if (
+      this._timestamp !== undefined &&
+      timestamp !== undefined &&
+      timestamp < (this._timestamp + 1000)
+    ) timestamp = this._timestamp + 1000
 
     this._timestamp = timestamp
 
-    if (!this._timestamp) this._emit('ended')
+    if (!this.isRunning) this._emit('ended')
   }
 
   on<K extends keyof CronosTaskListeners>(event: K, listener: CronosTaskListeners[K]) {

@@ -180,7 +180,7 @@ export class CronosTimezone {
 function hackyOffset(dtf: Intl.DateTimeFormat, date: Date) {
   const formatted = dtf.format(date).replace(/\u200E/g, ""),
         parsed = formatted.match(/(\d+)\/(\d+)\/(\d+),? (\d+):(\d+):(\d+)/),
-        [, month, day, year, hour, minute, second] = (parsed || []).map(n => parseInt(n, 10))
+        [, month, day, year, hour, minute, second] = (parsed ?? []).map(n => parseInt(n, 10))
   return new CronosDate(year, month, day, hour, minute, second)
 }
 

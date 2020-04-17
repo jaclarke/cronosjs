@@ -1,4 +1,4 @@
-import { sortAsc } from './utils'
+import { sortAsc, flatMap } from './utils'
 
 const predefinedCronStrings: {
   [key: string]: string
@@ -123,10 +123,7 @@ abstract class Field {
 
   static getValues(items: FieldItem[], first: number, last: number) {
     return Array.from(new Set(
-      items.reduce<number[]>((values, item) => {
-        values.push(...item.values(first, last))
-        return values
-      }, [])
+      flatMap(items, item => item.values(first, last))
     )).sort(sortAsc)
   }
 }
@@ -166,7 +163,7 @@ class FieldItem {
   static parse(item: string, first: number, last: number, allowCyclicRange = false, transformer?: (n: number) => number) {
     const fieldItem = new FieldItem(item)
 
-    const [match, all, startFrom, range, step] = (item.match(/^(?:(\*)|([0-9]+)|([0-9]+-[0-9]+))(?:\/([1-9][0-9]*))?$/) || []) as string[]
+    const [match, all, startFrom, range, step] = (item.match(/^(?:(\*)|([0-9]+)|([0-9]+-[0-9]+))(?:\/([1-9][0-9]*))?$/) ?? []) as string[]
 
     if (!match) throw new Error('Field item invalid format')
 
@@ -432,18 +429,18 @@ export class YearsField extends Field {
     return this.items.reduce<number[]>((years, item) => {
       if (item.any) years.push(fromYear)
       else if (item.single) {
-        const year = (item.range as {from: number}).from
+        const year = item.range!.from
         if (year >= fromYear) years.push(year)
       }
       else {
-        const start = item.range && item.range.from || this.first
+        const start = item.range?.from ?? this.first
         if (start > fromYear) years.push(start)
         else {
           const nextYear = start + Math.ceil((fromYear - start) / item.step) * item.step
-          if (nextYear <= (item.range && item.range.to || maxValidYear)) years.push(nextYear)
+          if (nextYear <= (item.range?.to ?? maxValidYear)) years.push(nextYear)
         }
       }
       return years
-    }, []).sort(sortAsc)[0] || null
+    }, []).sort(sortAsc)[0] ?? null
   }
 }
