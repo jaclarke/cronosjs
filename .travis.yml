@@ -1,5 +1,7 @@
 language: node_js
 node_js:
+  - "lts/dubnium"
+  - "lts/erbium"
   - "lts/*"
 env:
   - TZ=Europe/London
