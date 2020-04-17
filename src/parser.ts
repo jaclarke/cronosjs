@@ -1,4 +1,3 @@
-import { CronosExpression } from './expression'
 import { sortAsc } from './utils'
 
 const predefinedCronStrings: {
@@ -31,7 +30,23 @@ Largest full year valid as JS date = 275759
 */
 const maxValidYear = 275759
 
-export function _parse(cronstring: string) {
+export enum WarningType {
+  IncrementLargerThanRange = 'IncrementLargerThanRange',
+}
+
+export interface Warning {
+  type: WarningType
+  message: string
+}
+
+export function _parse(cronstring: string): [
+  SecondsOrMinutesField,
+  SecondsOrMinutesField,
+  HoursField,
+  DaysField,
+  MonthsField,
+  YearsField
+] {
   let expr = cronstring.trim().toLowerCase();
 
   if (predefinedCronStrings[expr]) {
@@ -51,15 +66,33 @@ export function _parse(cronstring: string) {
       fields.push('*')
   }
 
-  return new CronosExpression(
-    cronstring,
-    new SecondsOrMinutesField(fields[0]).values,
-    new SecondsOrMinutesField(fields[1]).values,
-    new HoursField(fields[2]).values,
-    new DaysField(fields[3], fields[5]).values,
-    new MonthsField(fields[4]).values,
+  return [
+    new SecondsOrMinutesField(fields[0]),
+    new SecondsOrMinutesField(fields[1]),
+    new HoursField(fields[2]),
+    new DaysField(fields[3], fields[5]),
+    new MonthsField(fields[4]),
     new YearsField(fields[6])
-  )
+  ]
+}
+
+function getIncrementLargerThanRangeWarnings(items: FieldItem[], first: number, last: number) {
+  const warnings: Warning[] = []
+
+  for (let item of items) {
+    let rangeLength: number
+    if (
+      item.step > 1 &&
+      item.step > (rangeLength = item.rangeLength(first, last))
+    ) {
+      warnings.push({
+        type: WarningType.IncrementLargerThanRange,
+        message: `Increment (${item.step}) is larger than range (${rangeLength}) for expression '${item.itemString}'`
+      })
+    }
+  }
+
+  return warnings
 }
 
 
@@ -84,6 +117,10 @@ abstract class Field {
     return Field.getValues(this.items, this.first, this.last)
   }
 
+  get warnings() {
+    return getIncrementLargerThanRangeWarnings(this.items, this.first, this.last)
+  }
+
   static getValues(items: FieldItem[], first: number, last: number) {
     return Array.from(new Set(
       items.reduce<number[]>((values, item) => {
@@ -101,10 +138,17 @@ class FieldItem {
   }
   step: number = 1
 
+  private constructor(public itemString: string) {}
+
+  rangeLength(first: number, last: number) {
+    const start = this.range?.from ?? first,
+            end = this.range?.to ?? last
+    return (end < start) ? ((last - start) + (end - first) + 1) : (end - start)
+  }
+
   values(first: number, last: number) {
     const start = this.range ? this.range.from : first,
-            end = (this.range && this.range.to !== undefined) ? this.range.to : last,
-    rangeLength = (end < start) ? ((last - start) + (end - first) + 1) : (end - start)
+          rangeLength = this.rangeLength(first, last)
 
     return Array(Math.floor(rangeLength / this.step) + 1)
       .fill(0)
@@ -120,7 +164,7 @@ class FieldItem {
   }
 
   static parse(item: string, first: number, last: number, allowCyclicRange = false, transformer?: (n: number) => number) {
-    const fieldItem = new FieldItem()
+    const fieldItem = new FieldItem(item)
 
     const [match, all, startFrom, range, step] = (item.match(/^(?:(\*)|([0-9]+)|([0-9]+-[0-9]+))(?:\/([1-9][0-9]*))?$/) || []) as string[]
 
@@ -160,6 +204,8 @@ class FieldItem {
 
     return fieldItem
   }
+
+  static asterisk = new FieldItem('*')
 }
 
 export class SecondsOrMinutesField extends Field {
@@ -228,6 +274,26 @@ export class DaysField {
     return DaysFieldValues.fromField(this)
   }
 
+  get warnings() {
+    const warnings: Warning[] = [],
+          dayItems = [
+            ...this.daysItems,
+            ...this.nearestWeekdayItems,
+          ],
+          weekItems = [
+            ...this.daysOfWeekItems,
+            ...this.lastDaysOfWeekItems,
+            ...this.nthDaysOfWeekItems.map(({item}) => item),
+          ]
+
+    warnings.push(
+      ...getIncrementLargerThanRangeWarnings(dayItems, 1, 31),
+      ...getIncrementLargerThanRangeWarnings(weekItems, 0, 6)
+    )
+
+    return warnings
+  }
+
   get allDays() {
     return (
       !this.lastDay &&
@@ -257,7 +323,7 @@ export class DaysFieldValues {
     values.lastDay = field.lastDay
     values.lastWeekday = field.lastWeekday
     values.days = Field.getValues(
-      field.allDays ? [new FieldItem()] : filterAnyItems(field.daysItems),
+      field.allDays ? [FieldItem.asterisk] : filterAnyItems(field.daysItems),
       1, 31)
     values.nearestWeekday = Field.getValues(field.nearestWeekdayItems, 1, 31)
     values.daysOfWeek = Field.getValues(filterAnyItems(field.daysOfWeekItems), 0, 6)
@@ -356,6 +422,10 @@ export class YearsField extends Field {
   protected parse() {
     return this.field.split(',')
       .map(item => FieldItem.parse(item, 0, maxValidYear))
+  }
+
+  get warnings() {
+    return getIncrementLargerThanRangeWarnings(this.items, this.first, maxValidYear)
   }
 
   nextYear(fromYear: number) {

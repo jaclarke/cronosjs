@@ -1,4 +1,4 @@
-import { _parse, DaysFieldValues, YearsField } from './parser'
+import { _parse, DaysFieldValues, YearsField, WarningType, Warning } from './parser'
 import { CronosDate, CronosTimezone } from './date'
 import { DateSequence } from './scheduler'
 
@@ -9,8 +9,9 @@ export class CronosExpression implements DateSequence {
   private timezone?: CronosTimezone
   private skipRepeatedHour = true
   private missingHour: 'insert' | 'offset' | 'skip' = 'insert'
+  private _warnings: Warning[] | null = null
 
-  constructor(
+  private constructor(
     public readonly cronString: string,
     private readonly seconds: number[],
     private readonly minutes: number[],
@@ -24,15 +25,46 @@ export class CronosExpression implements DateSequence {
     timezone?: string | number | CronosTimezone
     skipRepeatedHour?: boolean
     missingHour?: CronosExpression['missingHour']
+    strict?: boolean | {[key in WarningType]?: boolean}
   } = {}) {
-    const expr = _parse(cronstring)
-    
+    const parsedFields = _parse(cronstring)
+
+    if (options.strict) {
+      let warnings = parsedFields.flatMap(field => field.warnings)
+      if (typeof options.strict === 'object') {
+        warnings = warnings
+          .filter(warning => !!(options.strict as {[key in WarningType]?: boolean})[warning.type])
+      }
+      if (warnings.length > 0) {
+        throw new Error(`Strict mode: Parsing failed with ${warnings.length} warnings`)
+      }
+    }
+
+    const expr = new CronosExpression(
+      cronstring,
+      parsedFields[0].values,
+      parsedFields[1].values,
+      parsedFields[2].values,
+      parsedFields[3].values,
+      parsedFields[4].values,
+      parsedFields[5]
+    )
+
     expr.timezone = options.timezone instanceof CronosTimezone ? options.timezone :
       (options.timezone !== undefined ? new CronosTimezone(options.timezone) : undefined)
     expr.skipRepeatedHour = options.skipRepeatedHour !== undefined ? options.skipRepeatedHour : expr.skipRepeatedHour
     expr.missingHour = options.missingHour || expr.missingHour
 
     return expr
+  }
+
+  get warnings() {
+    if (!this._warnings) {
+      const parsedFields = _parse(this.cronString)
+      this._warnings = parsedFields.flatMap(field => field.warnings)
+    }
+
+    return this._warnings
   }
 
   toString() {

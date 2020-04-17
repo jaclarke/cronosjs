@@ -143,6 +143,19 @@ test('Every 3rd hour (0 */3 * * *)', () => {
   ])
 })
 
+test('Every 30 minutes from 29th minute past hour (29/30 * * * *)', () => {
+  expect(
+    CronosExpression.parse('29/30 * * * *')
+      .nextNDates(new Date(2019, 3, 21, 11, 23, 45), 5)
+  ).toEqual([
+    new Date(2019, 3, 21, 11, 29, 0),
+    new Date(2019, 3, 21, 11, 59, 0),
+    new Date(2019, 3, 21, 12, 29, 0),
+    new Date(2019, 3, 21, 12, 59, 0),
+    new Date(2019, 3, 21, 13, 29, 0)
+  ])
+})
+
 test('Every minute from 57 to 4 (57-4 * * * *)', () => {
   expect(
     CronosExpression.parse('57-4 * * * *')
