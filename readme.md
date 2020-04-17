@@ -312,7 +312,7 @@ import {
 
  - `cronString: string`  
   Cron string to validate
- - `options: { strict? }`
+ - `options: { strict? }`  
   Same as `strict` option documented in [`scheduleTask`](#scheduletask)
 
  - **Returns** `boolean`  

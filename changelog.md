@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.6.0] - 17 Apr 2020
+### Added
+ - `CronosExpression` now has `warnings` property that lists possible errors in the expression. Currently supports detecting cases where increment value is larger than the valid (or supplied) range for a field
+ - `scheduleTask`, `CronosExpression.parse()` and `validate` now support strict option, which when enabled will throw an error if warnings were generated during parsing
+
 ## [1.5.0] - 01 Nov 2019
 ### Added
  - Support for the `?` symbol as a alias to `*` in the *Day of Month* and *Day of Week* fields
