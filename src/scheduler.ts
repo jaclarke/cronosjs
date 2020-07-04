@@ -102,17 +102,21 @@ export class CronosTask {
   }
 
   start() {
-    this._updateTimestamp()
-    addTask(this)
-    runScheduledTasks()
-    if (this.isRunning) this._emit('started')
+    if (!this.isRunning) {
+      this._updateTimestamp()
+      addTask(this)
+      runScheduledTasks()
+      if (this.isRunning) this._emit('started')
+    }
     return this
   }
 
   stop() {
-    this._timestamp = undefined
-    removeTask(this)
-    this._emit('stopped')
+    if (this.isRunning) {
+      this._timestamp = undefined
+      removeTask(this)
+      this._emit('stopped')
+    }
     return this
   }
 

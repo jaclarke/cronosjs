@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.6.1] - 04 Jul 2020
+### Fixed
+ - Fix bug when `task.start()` is called on a running task
+
 ## [1.6.0] - 17 Apr 2020
 ### Added
  - `CronosExpression` now has `warnings` property that lists possible errors in the expression. Currently supports detecting cases where increment value is larger than the valid (or supplied) range for a field

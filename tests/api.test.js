@@ -159,6 +159,60 @@ describe('Scheduling tests', () => {
     expect(task.isRunning).toEqual(false)
   })
 
+  test('Calling .start() while task running', () => {
+    const runCallback = jest.fn()
+    const startedCallback = jest.fn()
+    const stoppedCallback = jest.fn()
+
+    const fromDate = '2020-07-04T12:00:00Z'
+    mockDate(fromDate)
+
+    const task = new CronosTask(
+      CronosExpression.parse('0/5 * * * * *', {
+        timezone: 0
+      })
+    )
+
+    task
+      .on('started', startedCallback)
+      .on('run', runCallback)
+      .on('stopped', stoppedCallback)
+      .start()
+
+    for (let i = 1; i <= 6; i++) {
+      mockDate(task.nextRun)
+      jest.runOnlyPendingTimers()
+
+      expect(runCallback).toHaveBeenLastCalledWith(
+        1593864000000 + (i*5000)
+      )
+    }
+    
+    expect(runCallback).toHaveBeenCalledTimes(6)
+
+    // second start call
+    task.start()
+
+    for (let i = 1; i <= 6; i++) {
+      mockDate(task.nextRun)
+      jest.runOnlyPendingTimers()
+
+      expect(runCallback).toHaveBeenLastCalledWith(
+        1593864030000 + (i*5000)
+      )
+    }
+    
+    expect(runCallback).toHaveBeenCalledTimes(12)
+
+    expect(startedCallback).toHaveBeenCalledTimes(1)
+    expect(stoppedCallback).toHaveBeenCalledTimes(0)
+
+    task.stop()
+    task.stop()
+
+    expect(stoppedCallback).toHaveBeenCalledTimes(1)
+  })
+
   test('CronosTask with array of dates', () => {
     const startedCallback = jest.fn()
     const runCallback = jest.fn()
