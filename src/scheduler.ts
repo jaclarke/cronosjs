@@ -21,7 +21,7 @@ function removeTask(task: CronosTask) {
   }
 }
 
-function runScheduledTasks() {
+function runScheduledTasks(skipRun = false) {
   if (runningTimer) clearTimeout(runningTimer)
 
   const now = Date.now()
@@ -30,7 +30,7 @@ function runScheduledTasks() {
   const tasksToRun = removeIndex >= 0 ? scheduledTasks.splice(removeIndex) : []
 
   for (let task of tasksToRun) {
-    task['_runTask']()
+    if (!skipRun) task['_runTask']()
     if (task.isRunning) {
       task['_updateTimestamp']()
       addTask(task)
@@ -42,6 +42,15 @@ function runScheduledTasks() {
     runningTimer = setTimeout(runScheduledTasks,
       Math.min(nextTask['_timestamp']! - Date.now(), maxTimeout))
   } else runningTimer = null
+}
+
+export function refreshSchedulerTimer() {
+  for (const task of scheduledTasks) {
+    task['_updateTimestamp']()
+    if (!task.isRunning) removeTask(task)
+  }
+  scheduledTasks.sort((a, b) => b['_timestamp']! - a['_timestamp']!)
+  runScheduledTasks(true)
 }
 
 export interface DateSequence {
@@ -133,18 +142,9 @@ export class CronosTask {
   }
 
   private _updateTimestamp() {
-    const nextDate = this._sequence.nextDate(
-      this._timestamp !== undefined ? new Date(this._timestamp) : new Date()
-    )
+    const nextDate = this._sequence.nextDate(new Date())
 
-    let timestamp = nextDate ? nextDate.getTime() : undefined
-    if (
-      this._timestamp !== undefined &&
-      timestamp !== undefined &&
-      timestamp < (this._timestamp + 1000)
-    ) timestamp = this._timestamp + 1000
-
-    this._timestamp = timestamp
+    this._timestamp = nextDate ? nextDate.getTime() : undefined
 
     if (!this.isRunning) this._emit('ended')
   }

@@ -1,5 +1,5 @@
 import { CronosExpression } from './expression'
-import { CronosTask } from './scheduler'
+import { CronosTask, refreshSchedulerTimer } from './scheduler'
 import { CronosTimezone } from './date'
 
 export function scheduleTask(
@@ -29,4 +29,4 @@ export function validate(
   return true
 }
 
-export { CronosExpression, CronosTask, CronosTimezone }
+export { CronosExpression, CronosTask, CronosTimezone, refreshSchedulerTimer }

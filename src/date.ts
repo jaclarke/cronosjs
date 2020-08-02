@@ -139,7 +139,7 @@ export class CronosTimezone {
         date.getTime() + (this.fixedOffset || 0) * 60000
       )
     }
-    return this.dateTimeFormat.formatToParts
+    return this.dateTimeFormat['formatToParts']
       ? partsOffset(this.dateTimeFormat, date)
       : hackyOffset(this.dateTimeFormat, date)
   }
