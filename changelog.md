@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.7.0] - 02 Aug 2020
+### Added
+ - Added `refreshSchedulerTimer()` function, to update the next execution time of all tasks and refresh the scheduler timer. Should be called when the system time is changed to ensure tasks are run at the correct times
+
 ## [1.6.1] - 04 Jul 2020
 ### Fixed
  - Fix bug when `task.start()` is called on a running task
