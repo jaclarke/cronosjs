@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.7.1] - 01 Apr 2021
+### Fixed
+ - Fix bug where `.nextDate` was returning incorrect dates, causing tasks to run continuously without delays, when running on Node.js v14.0.0 or greater. Bug was caused by the `Intl.DateTimeFormat` API returning '24:00:00' instead of '00:00:00' on Node.js > v14.0.0.
+
 ## [1.7.0] - 02 Aug 2020
 ### Added
  - Added `refreshSchedulerTimer()` function, to update the next execution time of all tasks and refresh the scheduler timer. Should be called when the system time is changed to ensure tasks are run at the correct times
