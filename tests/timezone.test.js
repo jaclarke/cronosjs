@@ -13,6 +13,19 @@ test('5:17 every Tue (EST/EDT)', () => {
   ])
 })
 
+test('Midnight at start of every month (Europe/Warsaw)', () => {
+  expect(
+    CronosExpression.parse('0 0 0 1 * ? *', {timezone: 'Europe/Warsaw'})
+      .nextNDates(new Date('2021-02-01T22:00:00Z'), 5)
+  ).toEqual([
+    new Date('2021-02-28T23:00:00.000Z'),
+    new Date('2021-03-31T22:00:00.000Z'),
+    new Date('2021-04-30T22:00:00.000Z'),
+    new Date('2021-05-31T22:00:00.000Z'),
+    new Date('2021-06-30T22:00:00.000Z'),
+  ])
+})
+
 test('5:17 every Tue (EST/EDT) (from DTF string format)', () => {
   const RealFormatToParts = Intl.DateTimeFormat.prototype.formatToParts
   Intl.DateTimeFormat.prototype.formatToParts = undefined
@@ -26,6 +39,24 @@ test('5:17 every Tue (EST/EDT) (from DTF string format)', () => {
     new Date('2019-03-19T09:17:00.000Z'), // 5:17:00 19/03/2019 EDT
     new Date('2019-03-26T09:17:00.000Z'), // 5:17:00 26/03/2019 EDT
     new Date('2019-04-02T09:17:00.000Z')  // 5:17:00 02/04/2019 EDT
+  ])
+
+  Intl.DateTimeFormat.prototype.formatToParts = RealFormatToParts
+})
+
+test('Midnight at start of every month (Europe/Warsaw) (from DTF string format)', () => {
+  const RealFormatToParts = Intl.DateTimeFormat.prototype.formatToParts
+  Intl.DateTimeFormat.prototype.formatToParts = undefined
+
+  expect(
+    CronosExpression.parse('0 0 0 1 * ? *', {timezone: 'Europe/Warsaw'})
+      .nextNDates(new Date('2021-02-01T22:00:00Z'), 5)
+  ).toEqual([
+    new Date('2021-02-28T23:00:00.000Z'),
+    new Date('2021-03-31T22:00:00.000Z'),
+    new Date('2021-04-30T22:00:00.000Z'),
+    new Date('2021-05-31T22:00:00.000Z'),
+    new Date('2021-06-30T22:00:00.000Z'),
   ])
 
   Intl.DateTimeFormat.prototype.formatToParts = RealFormatToParts

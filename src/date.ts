@@ -181,7 +181,7 @@ function hackyOffset(dtf: Intl.DateTimeFormat, date: Date) {
   const formatted = dtf.format(date).replace(/\u200E/g, ""),
         parsed = formatted.match(/(\d+)\/(\d+)\/(\d+),? (\d+):(\d+):(\d+)/),
         [, month, day, year, hour, minute, second] = (parsed ?? []).map(n => parseInt(n, 10))
-  return new CronosDate(year, month, day, hour, minute, second)
+  return new CronosDate(year, month, day, hour % 24, minute, second)
 }
 
 function partsOffset(dtf: Intl.DateTimeFormat, date: Date) {
@@ -190,7 +190,7 @@ function partsOffset(dtf: Intl.DateTimeFormat, date: Date) {
     parseInt(formatted[4].value, 10),
     parseInt(formatted[0].value, 10),
     parseInt(formatted[2].value, 10),
-    parseInt(formatted[6].value, 10),
+    parseInt(formatted[6].value, 10) % 24,
     parseInt(formatted[8].value, 10),
     parseInt(formatted[10].value, 10)
   )
