@@ -97,6 +97,10 @@ describe("Scheduling tests", () => {
 
     task.stop();
 
+    expect(() => {
+      const task = scheduleTask("0 0 * * *", () => {});
+      task.stop();
+    }).not.toThrow();
   });
 
   test("CronosTask", () => {

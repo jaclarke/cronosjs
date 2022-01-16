@@ -1,32 +1,30 @@
-import { CronosExpression } from './expression'
-import { CronosTask, refreshSchedulerTimer } from './scheduler'
-import { CronosTimezone } from './date'
+import { CronosExpression } from "./expression";
+import { CronosTask, refreshSchedulerTimer } from "./scheduler";
+import { CronosTimezone } from "./date";
 
 export function scheduleTask(
   cronString: string,
   task: (timestamp: number) => void,
-  options: Parameters<typeof CronosExpression.parse>[1]
+  options?: Parameters<typeof CronosExpression.parse>[1]
 ) {
-  const expression = CronosExpression.parse(cronString, options)
+  const expression = CronosExpression.parse(cronString, options);
 
-  return new CronosTask(expression)
-    .on('run', task)
-    .start()
+  return new CronosTask(expression).on("run", task).start();
 }
 
 export function validate(
   cronString: string,
   options?: {
-    strict: NonNullable<Parameters<typeof CronosExpression.parse>[1]>['strict']
+    strict: NonNullable<Parameters<typeof CronosExpression.parse>[1]>["strict"];
   }
 ) {
   try {
-    CronosExpression.parse(cronString, options)
+    CronosExpression.parse(cronString, options);
   } catch {
-    return false
+    return false;
   }
 
-  return true
+  return true;
 }
 
-export { CronosExpression, CronosTask, CronosTimezone, refreshSchedulerTimer }
+export { CronosExpression, CronosTask, CronosTimezone, refreshSchedulerTimer };
