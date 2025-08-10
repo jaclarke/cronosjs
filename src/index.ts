@@ -1,6 +1,6 @@
-import { CronosExpression } from "./expression";
-import { CronosTask, refreshSchedulerTimer } from "./scheduler";
-import { CronosTimezone } from "./date";
+import { CronosExpression } from "./expression.js";
+import { CronosTask, refreshSchedulerTimer } from "./scheduler.js";
+import { CronosTimezone } from "./date.js";
 
 export function scheduleTask(
   cronString: string,

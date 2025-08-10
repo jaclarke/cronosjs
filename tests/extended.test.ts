@@ -1,4 +1,5 @@
-import { CronosExpression } from "../src/index";
+import { test, expect, describe } from "vitest";
+import { CronosExpression } from "../src/index.js";
 
 test("6 stars (* * * * * *)", () => {
   expect(

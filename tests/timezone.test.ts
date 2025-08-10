@@ -1,4 +1,5 @@
-import { CronosExpression, CronosTimezone } from "../src/index";
+import { test, expect, describe } from "vitest";
+import { CronosExpression, CronosTimezone } from "../src/index.js";
 
 test("5:17 every Tue (EST/EDT)", () => {
   expect(
@@ -30,6 +31,7 @@ test("Midnight at start of every month (Europe/Warsaw)", () => {
 
 test("5:17 every Tue (EST/EDT) (from DTF string format)", () => {
   const RealFormatToParts = Intl.DateTimeFormat.prototype.formatToParts;
+  // @ts-expect-error
   Intl.DateTimeFormat.prototype.formatToParts = undefined;
 
   expect(
@@ -49,6 +51,7 @@ test("5:17 every Tue (EST/EDT) (from DTF string format)", () => {
 
 test("Midnight at start of every month (Europe/Warsaw) (from DTF string format)", () => {
   const RealFormatToParts = Intl.DateTimeFormat.prototype.formatToParts;
+  // @ts-expect-error
   Intl.DateTimeFormat.prototype.formatToParts = undefined;
 
   expect(

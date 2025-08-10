@@ -1,48 +1,33 @@
+import { test, expect, describe, beforeEach, afterEach, vi } from "vitest";
 import {
   scheduleTask,
   CronosExpression,
   CronosTask,
   validate,
-} from "../src/index";
-
-const RealDate = Date;
-
-function mockDate(isoDate: string | Date) {
-  // @ts-ignore
-  global.Date = class extends RealDate {
-    // @ts-ignore
-    constructor(...theArgs) {
-      if (theArgs.length) {
-        // @ts-ignore
-        return new RealDate(...theArgs);
-      }
-      return new RealDate(isoDate);
-    }
-
-    static now() {
-      return new RealDate(isoDate).getTime();
-    }
-  };
-}
+} from "../src/index.js";
 
 function getTimestamp(dateStr: string) {
   return new Date(dateStr).getTime();
 }
 
 describe("CronosExpression.nextDate() defaults", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
   afterEach(() => {
-    global.Date = RealDate;
+    vi.useRealTimers();
   });
 
   test("", () => {
-    mockDate("2019-04-21T11:23:45Z");
+    vi.setSystemTime("2019-04-21T11:23:45Z");
     expect(CronosExpression.parse("* * * * *").nextDate()).toEqual(
       new Date("2019-04-21T11:24:00Z")
     );
   });
 
   test("", () => {
-    mockDate("2019-04-21T11:23:45Z");
+    vi.setSystemTime("2019-04-21T11:23:45Z");
     expect(CronosExpression.parse("* * * * *").nextNDates()).toEqual([
       new Date("2019-04-21T11:24:00Z"),
       new Date("2019-04-21T11:25:00Z"),
@@ -65,18 +50,18 @@ describe("Validate cron string", () => {
 
 describe("Scheduling tests", () => {
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
-    global.Date = RealDate;
+    vi.useRealTimers();
   });
 
   test("scheduleTask()", () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
 
     const fromDate = "2019-04-21T11:23:45Z";
-    mockDate(fromDate);
+    vi.setSystemTime(fromDate);
 
     const task = scheduleTask("23 18/3 * * Wed", callback, {
       timezone: "Europe/London",
@@ -87,8 +72,8 @@ describe("Scheduling tests", () => {
 
     const nextExpectedDate = "2019-04-24T17:23:00Z";
 
-    mockDate(nextExpectedDate);
-    jest.advanceTimersByTime(
+    vi.setSystemTime(nextExpectedDate);
+    vi.advanceTimersByTime(
       getTimestamp(nextExpectedDate) - getTimestamp(fromDate)
     );
 
@@ -104,12 +89,12 @@ describe("Scheduling tests", () => {
   });
 
   test("CronosTask", () => {
-    const startedCallback = jest.fn();
-    const runCallback = jest.fn();
-    const endedCallback = jest.fn();
+    const startedCallback = vi.fn();
+    const runCallback = vi.fn();
+    const endedCallback = vi.fn();
 
     const fromDate = "2019-04-21T11:23:45Z";
-    mockDate(fromDate);
+    vi.setSystemTime(fromDate);
 
     const task = new CronosTask(
       CronosExpression.parse("0 23 18/3 * Apr Tue 2019", {
@@ -129,8 +114,7 @@ describe("Scheduling tests", () => {
     expect(startedCallback).toBeCalled();
 
     while (task.isRunning) {
-      mockDate(task.nextRun!);
-      jest.runOnlyPendingTimers();
+      vi.advanceTimersToNextTimer();
     }
 
     expect(runCallback).toHaveBeenCalledTimes(4);
@@ -144,11 +128,11 @@ describe("Scheduling tests", () => {
   });
 
   test("Stopping task in run callback", () => {
-    const runCallback = jest.fn();
-    const stoppedCallback = jest.fn();
+    const runCallback = vi.fn();
+    const stoppedCallback = vi.fn();
 
     const fromDate = "2019-04-21T11:23:45Z";
-    mockDate(fromDate);
+    vi.setSystemTime(fromDate);
 
     const task = new CronosTask(
       CronosExpression.parse("0 23 18/3 * Apr Tue 2019", {
@@ -164,8 +148,8 @@ describe("Scheduling tests", () => {
       .on("stopped", stoppedCallback)
       .start();
 
-    mockDate(task.nextRun!);
-    jest.runOnlyPendingTimers();
+    vi.setSystemTime(task.nextRun!);
+    vi.runOnlyPendingTimers();
 
     expect(runCallback).toHaveBeenCalledTimes(1);
 
@@ -175,12 +159,12 @@ describe("Scheduling tests", () => {
   });
 
   test("Calling .start() while task running", () => {
-    const runCallback = jest.fn();
-    const startedCallback = jest.fn();
-    const stoppedCallback = jest.fn();
+    const runCallback = vi.fn();
+    const startedCallback = vi.fn();
+    const stoppedCallback = vi.fn();
 
     const fromDate = "2020-07-04T12:00:00Z";
-    mockDate(fromDate);
+    vi.setSystemTime(fromDate);
 
     const task = new CronosTask(
       CronosExpression.parse("0/5 * * * * *", {
@@ -195,8 +179,7 @@ describe("Scheduling tests", () => {
       .start();
 
     for (let i = 1; i <= 6; i++) {
-      mockDate(task.nextRun!);
-      jest.runOnlyPendingTimers();
+      vi.advanceTimersToNextTimer();
 
       expect(runCallback).toHaveBeenLastCalledWith(1593864000000 + i * 5000);
     }
@@ -207,8 +190,7 @@ describe("Scheduling tests", () => {
     task.start();
 
     for (let i = 1; i <= 6; i++) {
-      mockDate(task.nextRun!);
-      jest.runOnlyPendingTimers();
+      vi.advanceTimersToNextTimer();
 
       expect(runCallback).toHaveBeenLastCalledWith(1593864030000 + i * 5000);
     }
@@ -225,11 +207,11 @@ describe("Scheduling tests", () => {
   });
 
   test("CronosTask with array of dates", () => {
-    const startedCallback = jest.fn();
-    const runCallback = jest.fn();
+    const startedCallback = vi.fn();
+    const runCallback = vi.fn();
 
     const fromDate = "2019-04-21T11:23:45Z";
-    mockDate(fromDate);
+    vi.setSystemTime(fromDate);
 
     const task = new CronosTask([
       new Date(2020, 7, 23, 9, 45, 0),
@@ -245,8 +227,8 @@ describe("Scheduling tests", () => {
 
     expect(startedCallback).toBeCalled();
 
-    mockDate("2019-04-21T11:57:25Z");
-    jest.runOnlyPendingTimers();
+    vi.setSystemTime("2019-04-21T11:57:25Z");
+    vi.runOnlyPendingTimers();
 
     expect(runCallback).toHaveBeenCalledTimes(1);
     expect(runCallback).toHaveBeenLastCalledWith(
