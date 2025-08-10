@@ -297,11 +297,16 @@ import {
  - `options: { timezone?, skipRepeatedHour?, missingHour?, strict? }` (optional)
     - `timezone: CronosTimezone | string | number` (optional)  
     Timezone in which to schedule the tasks, can be either a `CronosTimezone` object, or any IANA timezone or offset accepted by the [`CronosTimezone` constructor](#cronostimezone)
-    - `skipRepeatedHour: boolean` (optional)  
+    - `skipRepeatedHour: boolean` (optional, default `true`)  
     Should tasks be scheduled in the repeated hour when DST ends. [Further details](#skiprepeatedhour-option)
-    - `missingHour: 'insert' | 'offset' | 'skip'` (optional)  
+    - `missingHour: 'insert' | 'offset' | 'skip'` (optional, default `insert`)  
     How tasks should be scheduled in the missing hour when DST starts. [Further details](#missinghour-option)
-    - `strict: boolean | {<WarningType>: boolean, ...}` (optional)  
+    - `intersectDayOfFields: boolean` (optional, default `false`)
+    By default, when both the 'day of month' and 'day of week' fields are set, days that match *either* of the fields will be selected. But if this option is `true`, then only days that match *both* fields will be selected.
+    eg. for the expression `0 0 0 13 * fri *`, from the date 8th Aug 2025, the following dates will match:
+      - `intersectDayOfFields: false` (days that are the 13th *or* a friday): Fri 8th Aug, Wed 13th Aug, Fri 15th Aug, Fri 22nd Aug, Fri 29th Aug, etc...
+      - `intersectDayOfFields: true` (days that are the 13th *and* a friday): Fri 13th Feb 2026, Fri 13th Mar 2026, Fri 13th Nov 2026, Fri 13th Aug 2027, Fri 13th Oct 2028, etc...
+    - `strict: boolean | {<WarningType>: boolean, ...}` (optional, default `false`)  
     Should an error be thrown if warnings occur during parsing. If `true`, will throw for all `WarningType`'s, alternatively an object can be provided with `WarningType`'s as the keys and boolean values to individually select which `WarningType`'s trigger an error to be thown. `WarningTypes`'s are listed in the [`CronosExpression.warnings`](#cronosexpression) documentation.
 
  - **Returns**  [`CronosTask`](#cronostask)
