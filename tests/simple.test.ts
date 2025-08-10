@@ -1,4 +1,4 @@
-import { test, expect } from "vitest";
+import { test, expect, describe } from "vitest";
 import { CronosExpression } from "../src/index.js";
 
 test("Every minute (* * * * *)", () => {
@@ -249,4 +249,50 @@ test("1st of the month at 00:00, every 3rd month from aug to apr (0 0 1 aug-apr/
     new Date(2020, 7, 1, 0, 0, 0),
     new Date(2020, 10, 1, 0, 0, 0),
   ]);
+});
+
+describe("Midday friday and / or the 13th of the month (0 0 12 13 * fri *)", () => {
+  const expr = "0 0 12 13 * fri *";
+
+  test("intersectDayOfFields: true", () => {
+    expect(
+      CronosExpression.parse(expr, {
+        intersectDayOfFields: true,
+      }).nextNDates(
+        new Date(2025, 7, 8), // August 8, 2025
+        10
+      )
+    ).toEqual([
+      new Date(2026, 1, 13, 12), //  Fri 13th Feb 2026
+      new Date(2026, 2, 13, 12), //  Fri 13th Mar 2026
+      new Date(2026, 10, 13, 12), // Fri 13th Nov 2026
+      new Date(2027, 7, 13, 12), //  Fri 13th Aug 2027
+      new Date(2028, 9, 13, 12), //  Fri 13th Oct 2028
+      new Date(2029, 3, 13, 12), //  Fri 13th Apr 2029
+      new Date(2029, 6, 13, 12), //  Fri 13th Jul 2029
+      new Date(2030, 8, 13, 12), //  Fri 13th Sep 2030
+      new Date(2030, 11, 13, 12), // Fri 13th Dec 2030
+      new Date(2031, 5, 13, 12), //  Fri 13th Jun 2031
+    ]);
+  });
+
+  test("intersectDayOfFields: false (default)", () => {
+    expect(
+      CronosExpression.parse(expr).nextNDates(
+        new Date(2025, 7, 8), // August 8, 2025
+        10
+      )
+    ).toEqual([
+      new Date(2025, 7, 8, 12), //  Fri 8th Aug 2025
+      new Date(2025, 7, 13, 12), // Wed 13th Aug 2025
+      new Date(2025, 7, 15, 12), // Fri 15th Aug 2025
+      new Date(2025, 7, 22, 12), // Fri 22nd Aug 2025
+      new Date(2025, 7, 29, 12), // Fri 29th Aug 2025
+      new Date(2025, 8, 5, 12), //  Fri 5th Sep 2025
+      new Date(2025, 8, 12, 12), // Fri 12th Sep 2025
+      new Date(2025, 8, 13, 12), // Sat 13th Sep 2025
+      new Date(2025, 8, 19, 12), // Fri 19th Sep 2025
+      new Date(2025, 8, 26, 12), // Fri 26th Sep 2025
+    ]);
+  });
 });

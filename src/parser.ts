@@ -391,8 +391,8 @@ export class DaysFieldValues {
     return values;
   }
 
-  getDays(year: number, month: number): number[] {
-    const days: Set<number> = new Set(this.days);
+  getDays(year: number, month: number, intersect: boolean): number[] {
+    const weekdays: Set<number> = new Set();
 
     const lastDateOfMonth = new Date(year, month, 0).getDate();
     const firstDayOfWeek = new Date(year, month - 1, 1).getDay();
@@ -404,14 +404,11 @@ export class DaysFieldValues {
       return weekday + (weekday < 1 ? 3 : weekday > lastDateOfMonth ? -3 : 0);
     };
 
-    if (this.lastDay) {
-      days.add(lastDateOfMonth);
-    }
     if (this.lastWeekday) {
-      days.add(getNearestWeekday(lastDateOfMonth));
+      weekdays.add(getNearestWeekday(lastDateOfMonth));
     }
     for (const day of this.nearestWeekday) {
-      days.add(getNearestWeekday(day));
+      weekdays.add(getNearestWeekday(day));
     }
 
     if (
@@ -428,19 +425,36 @@ export class DaysFieldValues {
 
       for (const dayOfWeek of this.daysOfWeek) {
         for (const day of daysOfWeek[dayOfWeek]!) {
-          days.add(day);
+          weekdays.add(day);
         }
       }
       for (const dayOfWeek of this.lastDaysOfWeek) {
         for (let i = daysOfWeek[dayOfWeek]!.length - 1; i >= 0; i--) {
           if (daysOfWeek[dayOfWeek]![i]! <= lastDateOfMonth) {
-            days.add(daysOfWeek[dayOfWeek]![i]!);
+            weekdays.add(daysOfWeek[dayOfWeek]![i]!);
             break;
           }
         }
       }
       for (const [dayOfWeek, nthOfMonth] of this.nthDaysOfWeek) {
-        days.add(daysOfWeek[dayOfWeek]![nthOfMonth - 1]!);
+        weekdays.add(daysOfWeek[dayOfWeek]![nthOfMonth - 1]!);
+      }
+    }
+
+    const days = new Set(this.days);
+    if (this.lastDay) {
+      days.add(lastDateOfMonth);
+    }
+
+    if (intersect) {
+      for (const d of days) {
+        if (!weekdays.has(d)) {
+          days.delete(d);
+        }
+      }
+    } else {
+      for (const d of weekdays) {
+        days.add(d);
       }
     }
 

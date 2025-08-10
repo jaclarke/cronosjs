@@ -17,6 +17,7 @@ export class CronosExpression implements DateSequence {
   private timezone: CronosTimezone | undefined;
   private skipRepeatedHour = true;
   private missingHour: "insert" | "offset" | "skip" = "insert";
+  private intersectDayOfFields = false;
   private _warnings: Warning[] | null = null;
 
   private constructor(
@@ -35,6 +36,7 @@ export class CronosExpression implements DateSequence {
       timezone?: string | number | CronosTimezone;
       skipRepeatedHour?: boolean;
       missingHour?: CronosExpression["missingHour"];
+      intersectDayOfFields?: boolean;
       strict?: boolean | { [key in WarningType]?: boolean } | undefined;
     } = {}
   ) {
@@ -78,6 +80,10 @@ export class CronosExpression implements DateSequence {
         ? options.skipRepeatedHour
         : expr.skipRepeatedHour;
     expr.missingHour = options.missingHour ?? expr.missingHour;
+    expr.intersectDayOfFields =
+      options.intersectDayOfFields !== undefined
+        ? options.intersectDayOfFields
+        : expr.intersectDayOfFields;
 
     return expr;
   }
@@ -243,7 +249,11 @@ export class CronosExpression implements DateSequence {
   }
 
   private _nextDay(fromDate: CronosDate): CronosDate | null {
-    const days = this.days.getDays(fromDate.year, fromDate.month);
+    const days = this.days.getDays(
+      fromDate.year,
+      fromDate.month,
+      this.intersectDayOfFields
+    );
 
     let nextDayIndex = findFirstFrom(fromDate.day, days);
 
