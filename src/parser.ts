@@ -490,7 +490,9 @@ export class YearsField extends Field {
     return (
       this.items
         .reduce<number[]>((years, item) => {
-          if (item.any) years.push(fromYear);
+          if (item.any) {
+            if (fromYear <= maxValidYear) years.push(fromYear);
+          }
           else if (item.single) {
             const year = item.range!.from;
             if (year >= fromYear) years.push(year);
