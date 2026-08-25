@@ -272,3 +272,50 @@ describe("CronosExpression.cronString and .toString()", () => {
     ).toEqual("0 10 16 4,L Jun * 2035 (tz: -0430)");
   });
 });
+
+describe("Impossible day-of-month/month combinations", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // Regression: an unbounded (`*`) year field was not limited by maxValidYear,
+  // so nextDate() looped forever when no allowed month could contain any
+  // allowed day-of-month. These must return null, and return quickly.
+  test("April 31 returns null", () => {
+    vi.setSystemTime("2029-03-26T09:22:30Z");
+    expect(
+      CronosExpression.parse("0 0 31 4 *", { timezone: "UTC" }).nextDate()
+    ).toBeNull();
+  });
+
+  test("February 30 returns null", () => {
+    vi.setSystemTime("2029-03-26T09:22:30Z");
+    expect(
+      CronosExpression.parse("0 0 30 2 *", { timezone: "UTC" }).nextDate()
+    ).toBeNull();
+  });
+
+  test("31st with only Feb/Apr/Jun allowed returns null", () => {
+    vi.setSystemTime("2029-03-26T09:22:30Z");
+    expect(
+      CronosExpression.parse("0 0 31 2,4,6 *", { timezone: "UTC" }).nextDate()
+    ).toBeNull();
+  });
+
+  test("Control: 31st with a valid month still resolves", () => {
+    vi.setSystemTime("2029-03-26T09:22:30Z");
+    expect(
+      CronosExpression.parse("0 0 31 4,5 *", { timezone: "UTC" }).nextDate()
+    ).toEqual(new Date("2029-05-31T00:00:00Z"));
+  });
+
+  test("Control: February 29 resolves to next leap year", () => {
+    vi.setSystemTime("2029-03-26T09:22:30Z");
+    expect(
+      CronosExpression.parse("0 0 29 2 *", { timezone: "UTC" }).nextDate()
+    ).toEqual(new Date("2032-02-29T00:00:00Z"));
+  });
+});
